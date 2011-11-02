@@ -1,0 +1,38 @@
+#+TITLE: PIP Instances
+#+AUTHOR:    Gustavo Gutierrez
+#+EMAIL:     gustavo.ggutierrez@gmail.com
+#+DATE:      2011-10-29 Sat
+#+DESCRIPTION:
+#+KEYWORDS:
+#+LANGUAGE:  en
+#+OPTIONS:   H:4 num:t toc:t \n:nil @:t ::t |:t ^:t -:t f:t *:t <:t
+#+OPTIONS:   skip:nil d:nil pri:nil tags:not-in-toc
+#+OPTIONS:   TeX:t LaTeX:t toc:t todo:t
+#+LaTeX_CLASS: report
+#+INFOJS_OPT: view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+#+LINK_UP:   
+#+LINK_HOME: 
+#+XSLT:
+
+* Instance description
+  |--------+----------+--------------+-----------+----------|
+  | Name   | Packages | Dependencies | Conflicts | Provides |
+  |--------+----------+--------------+-----------+----------|
+  | kmines |    71342 |       404070 |     45915 |   116849 |
+  |--------+----------+--------------+-----------+----------|
+ 
+* Statistics
+** Representation size
+   The following data is measured by loading all the relevant
+   information of the problem into /ground relations/.
+
+   For these measurements we are using the default parameters to
+   initialize CUDD.
+   |--------+--------------+---------+-----+-----------+--------------|
+   | Name   | Memmory (MB) | GC (s.) |  GC | BDD Nodes | Reading (s.) |
+   |--------+--------------+---------+-----+-----------+--------------|
+   | kmines |      64.2197 |   9.743 | 243 |   1035915 |      35.2547 |
+   |--------+--------------+---------+-----+-----------+--------------|
+  

@@ -8,15 +8,6 @@
 
 namespace bc = boost::chrono;
 
-
-
-CPRelPkg::ProblemDesc process(std::istream& kcudf) {
-  std::cout << "Transforming problem into relations" << std::endl; 
-  CPRelPkg::RelationWriter rw;
-  read(kcudf,rw);
-  return rw.problem();
-}
-
 MPG::GRelation oneProvider(const CPRelPkg::ProblemDesc& problem) {
   // providers is the 4-th term of the problem description
   const MPG::GRelation& providers = std::get<3>(problem);
@@ -77,7 +68,7 @@ int main(int argc, char* argv[]) {
       return 1;
     }
     bc::system_clock::time_point start = bc::system_clock::now();
-    auto problem = process(is);
+    auto problem = CPRelPkg::process(is);
     bc::duration<double> sec = bc::system_clock::now() - start;
     std::cout << "Reading time " << sec.count() << " seconds\n";
    
