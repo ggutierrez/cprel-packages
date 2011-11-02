@@ -65,8 +65,22 @@ endif()
 ##########################################################################
 # Gecode
 ##########################################################################
-find_package(Gecode REQUIRED COMPONENTS kernel support int set driver flatzinc gist minimodel search cprel)
+find_package(Gecode REQUIRED COMPONENTS kernel support int set driver flatzinc gist minimodel search)
 include_directories(GECODE_INCLUDE_DIR)
+##########################################################################
+# CPRel
+##########################################################################
+find_package(CPRel REQUIRED)
+include_directories(CPREL_INCLUDE_DIR)
+##########################################################################
+# Cudf
+##########################################################################
+find_library(CUDF_LIB cudfparser)
+if(CUDF_LIB) 
+  message(STATUS "Using cudf library from: ${CUDF_LIB}")
+else()
+  message(FATAL_ERROR "cudf library is required")
+endif()
 ##########################################################################
 # Kcudf
 ##########################################################################
@@ -77,3 +91,6 @@ if(KCUDF_LIB AND KCUDF_HDR)
 else()
   message(FATAL_ERROR "Libkcudf is needed to build this project")
 endif()
+
+add_executable(statistics tools/stats.cpp)
+target_link_libraries(statistics ${CUDF_LIB} ${KCUDF_LIB})
