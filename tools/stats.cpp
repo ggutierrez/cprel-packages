@@ -6,7 +6,7 @@
 #include <bdddomain/manager.hh>
 
 /// A problem is a tuple of ground relations: <Packages,Dependencies,Conflicts,Provides>
-typedef std::tuple<MPG::GRelation,MPG::GRelation,MPG::GRelation,MPG::GRelation>
+typedef std::tuple<MPG::GRelation,MPG::GRelation,MPG::GRelation,MPG::GRelation,MPG::GRelation>
 ProblemDesc;
 
 /**
@@ -19,13 +19,12 @@ private:
   MPG::GRelation dependencies_;
   MPG::GRelation conflicts_;
   MPG::GRelation provides_;
-  /// Temporal information
-  int concretes_;
+  MPG::GRelation concretes_;
 public:
   ///Constructor
   RelationWriter(void)
     : packages_(3), dependencies_(2), conflicts_(2), provides_(2),
-      concretes_(0) {}
+      concretes_(1) {}
   /// Destructor
   virtual ~RelationWriter(void) {}
   /// Callback for a package
@@ -49,19 +48,21 @@ public:
   }
   /// Callback for a dependency
   virtual void provides(unsigned int package, unsigned int provides, const char*) {
-    if (package == provides)
-      concretes_++;
+    if (package == provides) {
+      MPG::Tuple c({(int)package});
+      concretes_.add(c);
+    }
 
     MPG::Tuple t({(int)package,(int)provides});
     provides_.add(t);
   }
   /// Returns a tuple with the relations
   ProblemDesc problem(void) {
-    return ProblemDesc(packages_,dependencies_,conflicts_,provides_);
+    return ProblemDesc(packages_,dependencies_,conflicts_,provides_,concretes_);
   }
   /// Returns the number of read concrete packages
   int concretes(void) const {
-    return concretes_;
+    return concretes_.cardinality();
   }
 };
 
@@ -69,7 +70,6 @@ ProblemDesc process(std::istream& kcudf) {
   std::cout << "Transforming problem into relations" << std::endl; 
   RelationWriter rw;
   read(kcudf,rw);
-  std::cout << "Concrete packages: " << rw.concretes() << std::endl; 
   return rw.problem();
 }
 
@@ -85,21 +85,9 @@ MPG::GRelation oneProvider(const ProblemDesc& problem) {
   */
   return u;
 }
-MPG::GRelation concretes(const ProblemDesc& problem) {
-  /// A concrete package provides itself
-  const MPG::GRelation& providers = std::get<3>(problem);
-  MPG::GRelation oneProv(providers);
-  auto u = oneProv.unique(0).intersect(providers);
-  // if all the virtuals have at least one provider this is accurate:
-  
 
-  // Get a unary relation with the packages from the description
-  auto packages = std::get<0>(problem).shiftRight(2);
-  //std::cout << "Packages!! " << packages.cardinality() << std::endl;
-  //auto packages_packages = packages.times(packages);
-  
-  // intersect both relations to get the concretes
-  return packages.intersect(u.project(1).complement());
+MPG::GRelation concretes(const ProblemDesc& problem) {
+  return std::get<4>(problem);
 }
 
 MPG::GRelation filterPackages(const ProblemDesc& problem, int keep, int install) {
@@ -108,10 +96,9 @@ MPG::GRelation filterPackages(const ProblemDesc& problem, int keep, int install)
   
   auto allPossible = tmp.timesULeft(1);
   auto filtered = allPossible.intersect(std::get<0>(problem));
-  std::cout << "Packages matching " << keep << " " << install 
-	    << " " << filtered.cardinality() << std::endl; 
   return filtered;
 }
+
 
 void problemStats(const ProblemDesc& problem) {
   std::cout << "Problem statistics: " << std::endl
