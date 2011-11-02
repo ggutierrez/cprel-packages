@@ -9,7 +9,12 @@
 namespace bc = boost::chrono;
 
 void search(CPRelPkg::Solver *root) {
-  Gecode::DFS<CPRelPkg::Solver> e(root);
+  Gecode::Search::Options o;
+  o.threads = 1;
+  o.c_d = 1000;
+  o.a_d = 250;
+  
+  Gecode::DFS<CPRelPkg::Solver> e(root,o);
   delete root;
   
   int solutionsFound = 0;
@@ -30,6 +35,9 @@ void searchGist(CPRelPkg::Solver *root) {
   Gist::Print<CPRelPkg::Solver> p("Solver");
   Gist::Options o;
   o.inspect.click(&p);
+  o.threads = 1;
+  o.c_d = 1000;
+  o.a_d = 250;
   Gist::dfs(root,o);
   delete root;
 }
@@ -47,9 +55,9 @@ int main(int argc, char* argv[]) {
     auto problem = CPRelPkg::process(is);
     bc::duration<double> sec = bc::system_clock::now() - start;
     std::cout << "Reading time " << sec.count() << " seconds\n";
-    CPRelPkg::Solver* root = new CPRelPkg::Solver();
-    //search(root);
-    searchGist(root);
+    CPRelPkg::Solver* root = new CPRelPkg::Solver(problem);
+    search(root);
+    //searchGist(root);
   } else {
     std::cerr << "Called with wrong number of arguments" << std::endl; 
     return 1;

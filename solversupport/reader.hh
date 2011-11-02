@@ -57,7 +57,7 @@ namespace CPRelPkg {
       provides_.add(t);
     }
     /// Returns a tuple with the relations
-    ProblemDesc problem(void) {
+    inline ProblemDesc problem(void) {
       return ProblemDesc(packages_,dependencies_,conflicts_,provides_,concretes_);
     }
     /// Returns the number of read concrete packages
@@ -66,7 +66,7 @@ namespace CPRelPkg {
     }
   };
 
-  ProblemDesc process(std::istream& kcudf) {
+  inline ProblemDesc process(std::istream& kcudf) {
     //std::cout << "Transforming problem into relations" << std::endl; 
     RelationWriter rw;
     read(kcudf,rw);
