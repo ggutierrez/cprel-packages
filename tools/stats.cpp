@@ -7,25 +7,39 @@
  */
 class RelationWriter : public KCudfWriter {
 public:
+  /// The relations when the contents are read
+  MPG::GRelation packages_;
+  MPG::GRelation dependencies_;
+  MPG::GRelation conflicts_;
+  MPG::GRelation provides_;
   ///Constructor
-  RelationWriter(void) {}
+  RelationWriter(void)
+    : packages_(3), dependencies_(2), conflicts_(2), provides_(2) {}
   /// Destructor
   virtual ~RelationWriter(void) {}
   /// Callback for a package
   virtual void package(unsigned int id, bool keep, bool install, const char*) {
-    //std::cout << "Package: " << id << std::endl; 
+    int k = keep ? 1 : 0;
+    int i = install ? 1 : 0;
+    MPG::Tuple t({id,k,i});
+    packages_.add(t);
   }
   /// Callback for a dependency
   virtual void dependency(unsigned int package, unsigned int depends, const char*) {
-    //std::cout << "Dependency " << package << " on " << depends << std::endl; 
+    MPG::Tuple t({(int)package,(int)depends});
+    dependencies_.add(t);
   }
   /// Callback for a dependency
-  virtual void conflict(unsigned int package, unsigned int depends, const char*) {
-    //std::cout << "Conflict " << package << " on " << depends << std::endl; 
+  virtual void conflict(unsigned int package, unsigned int conflict, const char*) {
+    MPG::Tuple t({(int)package, (int)conflict});
+    MPG::Tuple t2({(int)conflict, (int)package});
+    conflicts_.add(t);
+    conflicts_.add(t2);
   }
   /// Callback for a dependency
-  virtual void provides(unsigned int package, unsigned int depends, const char*) {
-    //std::cout << "Provides " << package << " on " << depends << std::endl; 
+  virtual void provides(unsigned int package, unsigned int provides, const char*) {
+    MPG::Tuple t({(int)package,(int)provides});
+    provides_.add(t);
   }
 };
 

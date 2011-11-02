@@ -93,4 +93,4 @@ else()
 endif()
 
 add_executable(statistics tools/stats.cpp)
-target_link_libraries(statistics ${CUDF_LIB} ${KCUDF_LIB})
+target_link_libraries(statistics ${CUDF_LIB} ${KCUDF_LIB} ${CPREL_LIBRARIES})
