@@ -1,17 +1,25 @@
 #include <iostream>
 #include <fstream>
+#include <tuple>
 #include <kcudf/kcudf.hh>
 #include <rel/grelation.hh>
+#include <bdddomain/manager.hh>
+
+/// A problem is a tuple of ground relations: <Packages,Dependencies,Conflicts,Provides>
+typedef std::tuple<MPG::GRelation,MPG::GRelation,MPG::GRelation,MPG::GRelation>
+ProblemDesc;
+
 /**
  * \brief Stores the information of a kcudf file into a relation.
  */
 class RelationWriter : public KCudfWriter {
-public:
+private:
   /// The relations when the contents are read
   MPG::GRelation packages_;
   MPG::GRelation dependencies_;
   MPG::GRelation conflicts_;
   MPG::GRelation provides_;
+public:
   ///Constructor
   RelationWriter(void)
     : packages_(3), dependencies_(2), conflicts_(2), provides_(2) {}
@@ -41,13 +49,34 @@ public:
     MPG::Tuple t({(int)package,(int)provides});
     provides_.add(t);
   }
+  /// Returns a tuple with the relations
+  ProblemDesc problem(void) {
+    return ProblemDesc(packages_,dependencies_,conflicts_,provides_);
+  }
 };
 
-void process(std::istream& kcudf, const char* fname) {
-  std::cout << "Doing something" << std::endl; 
-  // Read the specification into a relation
+ProblemDesc process(std::istream& kcudf) {
+  std::cout << "Transforming problem into relations" << std::endl; 
   RelationWriter rw;
   read(kcudf,rw);
+  return rw.problem();
+}
+
+void bddStats(const ProblemDesc& problem) {
+  std::cout << "Problem statistics: " << std::endl
+	    << "\tPackages: " << std::get<0>(problem).cardinality() << std::endl
+	    << "\tDependencies: " << std::get<1>(problem).cardinality() << std::endl
+	    << "\tconflicts: " << std::get<2>(problem).cardinality() / 2 << std::endl
+	    << "\tProvides: " << std::get<3>(problem).cardinality() << std::endl;
+  
+  auto& factory = MPG::VarImpl::factory();
+ 
+  std::cout << "BDD statistics:" << std::endl
+	    << "\tNodes used: " << factory.ReadNodeCount()
+	    << "\tReordering time: " << factory.ReadReorderingTime() << std::endl;
+
+  std::cout << "Will start reordering: " << std::endl; 
+  //factory.ReduceHeap(CUDD_REORDER_ANNEALING,1000);
 }
 
 int main(int argc, char* argv[]) {
@@ -59,7 +88,9 @@ int main(int argc, char* argv[]) {
       std::cout << "Error opening the file: " << kcudf << std::endl; 
       return 1;
     }
-    process(is,kcudf);
+    auto problem = process(is);
+    bddStats(problem);
+    
   } else {
     std::cerr << "Called with wrong number of arguments" << std::endl; 
     return 1;
