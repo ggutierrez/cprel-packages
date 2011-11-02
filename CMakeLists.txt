@@ -91,6 +91,9 @@ if(KCUDF_LIB AND KCUDF_HDR)
 else()
   message(FATAL_ERROR "Libkcudf is needed to build this project")
 endif()
-
+##########################################################################
+# This project products
+##########################################################################
+include_directories(${CMAKE_SOURCE_DIR})
 add_executable(statistics tools/stats.cpp)
-target_link_libraries(statistics ${CUDF_LIB} ${KCUDF_LIB} ${CPREL_LIBRARIES})
+target_link_libraries(statistics ${CUDF_LIB} ${KCUDF_LIB} ${CPREL_LIBRARIES} ${Boost_LIBRARIES})
