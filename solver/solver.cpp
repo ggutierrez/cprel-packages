@@ -1,5 +1,5 @@
 #include <solver/solver.hh>
-
+#include <solver/prop/dependencies.hh>
 
 namespace CPRelPkg {
 
@@ -45,7 +45,6 @@ namespace CPRelPkg {
 
       //std::cout << "After posting mi: " << inst_.glb().cardinality() << std::endl; 
       //std::cout << "After posting mu: " << inst_.unk().cardinality() << std::endl; 
-      
     }
     // branch
     //MPG::branch(*this,inst_);
