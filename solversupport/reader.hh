@@ -55,6 +55,10 @@ namespace CPRelPkg {
 
       MPG::Tuple t({(int)package,(int)provides});
       provides_.add(t);
+
+      // if _package_ provides _provides_ then it isnot possible to
+      // have _package_ and not have _provides_
+      dependencies_.add(t);
     }
     /// Returns a tuple with the relations
     inline ProblemDesc problem(void) {

@@ -25,14 +25,6 @@ MPG::GRelation concretes(const CPRelPkg::ProblemDesc& problem) {
   return std::get<4>(problem);
 }
 
-MPG::GRelation filterPackages(const CPRelPkg::ProblemDesc& problem, int keep, int install) {
-  MPG::GRelation tmp(2);
-  tmp.add(MPG::Tuple({keep,install}));
-  
-  auto allPossible = tmp.timesULeft(1);
-  auto filtered = allPossible.intersect(std::get<0>(problem));
-  return filtered;
-}
 
 
 void problemStats(const CPRelPkg::ProblemDesc& problem) {

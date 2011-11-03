@@ -2,6 +2,17 @@
 
 
 namespace CPRelPkg {
+
+  MPG::GRelation filterPackages(const MPG::GRelation& packages, int keep, int install) {
+    MPG::GRelation tmp(2);
+    tmp.add(MPG::Tuple({keep,install}));
+    
+    auto allPossible = tmp.timesULeft(1);
+    auto filtered = allPossible.intersect(packages);
+    return filtered;
+  }
+
+
   Solver::Solver(const ProblemDesc& problem) {
     dependencies_ = MPG::CPRelVar(*this,
 				  std::get<1>(problem),
@@ -20,8 +31,24 @@ namespace CPRelPkg {
 			  std::get<0>(problem).shiftRight(2)
 			  );
 
+    {
+      //std::cout << "Before posting mi: " << inst_.glb().cardinality() << std::endl; 
+      //std::cout << "Before posting mu: " << inst_.unk().cardinality() << std::endl; 
+
+      // Packages with Must#Install must be in the installation
+      auto mi = filterPackages(std::get<0>(problem), 1, 1);
+      MPG::include(*this,inst_,mi.shiftRight(2));
+
+      // Packages with Must#install must be out of the installation
+      auto mu = filterPackages(std::get<0>(problem), 1, 0);
+      MPG::exclude(*this,inst_,mu.shiftRight(2));
+
+      //std::cout << "After posting mi: " << inst_.glb().cardinality() << std::endl; 
+      //std::cout << "After posting mu: " << inst_.unk().cardinality() << std::endl; 
+      
+    }
     // branch
-    MPG::branch(*this,inst_);
+    //MPG::branch(*this,inst_);
   }
 
   Solver::Solver(bool share, Solver& s)
