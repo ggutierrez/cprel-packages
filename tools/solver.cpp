@@ -8,7 +8,7 @@
 
 namespace bc = boost::chrono;
 
-void search(CPRelPkg::Solver *root) {
+void search(CPRelPkg::Solver *root, int sols = 0) {
   Gecode::Search::Options o;
   o.threads = 1;
   o.c_d = 1000;
@@ -24,6 +24,10 @@ void search(CPRelPkg::Solver *root) {
     solutionsFound++;
     std::cout << "**** End solution ****" << std::endl; 
     delete s;
+
+    if (solutionsFound == sols) {
+      break;
+    }
   }
   std::cout << "### search ends, Total solutions: " << solutionsFound << std::endl; 
 
@@ -56,7 +60,7 @@ int main(int argc, char* argv[]) {
     bc::duration<double> sec = bc::system_clock::now() - start;
     std::cout << "Reading time " << sec.count() << " seconds\n";
     CPRelPkg::Solver* root = new CPRelPkg::Solver(problem);
-    search(root);
+    search(root,1);
     //searchGist(root);
   } else {
     std::cerr << "Called with wrong number of arguments" << std::endl; 

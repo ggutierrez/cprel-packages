@@ -4,6 +4,7 @@
 #include <boost/chrono.hpp>
 #include <cmath>
 #include <solversupport/reader.hh>
+#include <solversupport/pkg-builtins.hh>
 #include <bdddomain/manager.hh>
 
 namespace bc = boost::chrono;
@@ -26,7 +27,6 @@ MPG::GRelation concretes(const CPRelPkg::ProblemDesc& problem) {
 }
 
 
-
 void problemStats(const CPRelPkg::ProblemDesc& problem) {
   std::cout << "Problem statistics: " << std::endl
 	    << "\tPackages: " << std::get<0>(problem).cardinality() << std::endl
@@ -36,6 +36,8 @@ void problemStats(const CPRelPkg::ProblemDesc& problem) {
   //oneProvider(problem);
   //filterPackages(problem,0,1);
   //std::cout << "Concrete packages: " << concretes(problem).cardinality() << std::endl; 
+  //auto sProvides = CPRelPkg::isStableProvides(problem);
+  //std::cout << "Stable: " << sProvides << std::endl; 
 }
 
 void bddStats(const CPRelPkg::ProblemDesc& problem) {

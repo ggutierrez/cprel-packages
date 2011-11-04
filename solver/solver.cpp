@@ -1,17 +1,8 @@
 #include <solver/solver.hh>
+#include <solversupport/pkg-builtins.hh>
 #include <solver/prop/dependencies.hh>
 
 namespace CPRelPkg {
-
-  MPG::GRelation filterPackages(const MPG::GRelation& packages, int keep, int install) {
-    MPG::GRelation tmp(2);
-    tmp.add(MPG::Tuple({keep,install}));
-    
-    auto allPossible = tmp.timesULeft(1);
-    auto filtered = allPossible.intersect(packages);
-    return filtered;
-  }
-
 
   Solver::Solver(const ProblemDesc& problem) {
     dependencies_ = MPG::CPRelVar(*this,
@@ -46,8 +37,13 @@ namespace CPRelPkg {
       //std::cout << "After posting mi: " << inst_.glb().cardinality() << std::endl; 
       //std::cout << "After posting mu: " << inst_.unk().cardinality() << std::endl; 
     }
+
+    {
+      // the dependencies of all packages must be ensured
+      dependencies(*this,inst_,dependencies_);
+    }
     // branch
-    //MPG::branch(*this,inst_);
+    MPG::branch(*this,inst_);
   }
 
   Solver::Solver(bool share, Solver& s)

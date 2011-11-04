@@ -51,6 +51,8 @@ namespace CPRelPkg {
       if (package == provides) {
 	MPG::Tuple c({(int)package});
 	concretes_.add(c);
+	MPG::Tuple d({(int)package, (int)package});
+	dependencies_.add(d);
       }
 
       MPG::Tuple t({(int)package,(int)provides});
