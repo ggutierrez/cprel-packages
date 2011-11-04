@@ -43,7 +43,8 @@ namespace CPRelPkg {
       dependencies(*this,inst_,dependencies_);
     }
     // branch
-    MPG::branch(*this,inst_);
+    //MPG::branch(*this,inst_);
+    stableProvides(*this,inst_,provides_);
   }
 
   Solver::Solver(bool share, Solver& s)

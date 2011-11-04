@@ -98,6 +98,6 @@ include_directories(${CMAKE_SOURCE_DIR})
 add_executable(statistics tools/stats.cpp)
 target_link_libraries(statistics ${CUDF_LIB} ${KCUDF_LIB} ${CPREL_LIBRARIES} ${Boost_LIBRARIES})
 
-add_library(cprelsolver solver/solver.cpp solver/prop/dependencies.cpp)
+add_library(cprelsolver solver/solver.cpp solver/prop/dependencies.cpp solver/branch/stableProvides.cpp)
 add_executable(solver tools/solver.cpp)
 target_link_libraries(solver cprelsolver ${CUDF_LIB} ${KCUDF_LIB} ${CPREL_LIBRARIES} ${Boost_LIBRARIES} ${GECODE_LIBRARIES})

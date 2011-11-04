@@ -66,9 +66,9 @@ namespace CPRelPkg {
     auto providesInInstallation = installation.times(installation).intersect(provides);
     auto provided = providesInInstallation.shiftRight(1);
 
-    std::cout << "Provided " << provided.difference(installation) << std::endl;
-    std::cout << "Provided2 " << installation.difference(provided) << std::endl;
- 
+    //std::cout << "Provided " << provided.difference(installation) << std::endl;
+    //std::cout << "Provided2 " << installation.difference(provided) << std::endl;
+    
     return provided.eq(installation);
   }
 }

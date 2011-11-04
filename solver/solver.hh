@@ -24,6 +24,8 @@ namespace CPRelPkg {
     /// Print solution to stream \a os
     void print(std::ostream& os) const;
   };
+
+  void stableProvides(Gecode::Home home, MPG::CPRelVar inst, MPG::CPRelVar provides);
 }
 
 #endif
