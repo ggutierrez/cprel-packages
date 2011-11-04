@@ -71,7 +71,7 @@ namespace CPRelPkg {
 	// that we need to add for this current set of installed
 	// packages.
 	auto neededDeps = installed.timesURight(1).intersect(dependencies_.glb());
-
+	
 	// Add the needed dependencies to the installation. for this
 	// we need to project on the right most column and include in
 	// inst_
@@ -81,10 +81,10 @@ namespace CPRelPkg {
 	//std::cout << "Needed " << neededDeps.cardinality() << " for the current installation" << std::endl; 
 	//std::cout << "\tInstall after: " << inst_.glb().cardinality() << std::endl; 
       }
-
+      
       if (inst_.assigned() && dependencies_.assigned())
 	return home.ES_SUBSUMED(*this);
-      return Gecode::ES_FIX;
+      return Gecode::ES_NOFIX;
     }
   };
   void dependencies(Gecode::Space& home, MPG::CPRelVar installation, MPG::CPRelVar dependencies);

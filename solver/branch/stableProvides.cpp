@@ -24,7 +24,7 @@ namespace CPRelPkg {
     /// Provides
     MPG::CPRel::CPRelView provides_;
     /// Last computed relation of needed provides
-    MPG::GRelation needed_;
+    mutable MPG::GRelation needed_;
     /// Simple, tuple-based relation choice
     class RelChoice : public Choice {
     public:
@@ -57,7 +57,7 @@ namespace CPRelPkg {
     }
     /// Constructor for clonning
     NaiveBranch(Space& home, bool share, NaiveBranch& b)
-      : Brancher(home,share,b) {
+      : Brancher(home,share,b), needed_(2) {
       inst_.update(home,share,b.inst_);
       provides_.update(home,share,b.provides_);
     }
@@ -76,9 +76,9 @@ namespace CPRelPkg {
       auto possibleProvides = inst_.glb().timesULeft(1).intersect(provides_.lub());
       auto alreadyProvided = provides_.glb().exists(1);
       
-      auto needed = possibleProvides.difference(alreadyProvided);
-      std::cout << "Needed provides: " << needed << std::endl; 
-      if (needed.empty())
+      needed_.become(possibleProvides.difference(alreadyProvided));
+      //std::cout << "Needed provides: " << needed_ << std::endl; 
+      if (needed_.empty())
 	return false;
       return true;
     }
@@ -86,7 +86,7 @@ namespace CPRelPkg {
     virtual Choice* choice(Space&) {
       //GRelationIter it(x_.unk());
       //assert(!x_.unk().empty());
-      return new RelChoice(*this,provides_.unk().pickOneTuple());
+      return new RelChoice(*this,needed_.pickOneTuple());
     }
     virtual Choice* choice(const Space&, Archive& e) {
       int arity;
@@ -107,10 +107,10 @@ namespace CPRelPkg {
       MPG::GRelation r(ch.t_.arity());
       r.add(ch.t_);
       if (a == 0) {
-	std::cout << "-> Brancher adding: " << r << std::endl;
+	//std::cout << "-> Brancher adding: " << r << std::endl;
 	return Gecode::me_failed(provides_.include(home,r)) ? ES_FAILED : ES_OK;
       } else {
-	std::cout << "-> Brancher removing: " << r << std::endl;
+	//std::cout << "-> Brancher removing: " << r << std::endl;
 	return Gecode::me_failed(provides_.exclude(home,r)) ? ES_FAILED : ES_OK;
       }
     }
