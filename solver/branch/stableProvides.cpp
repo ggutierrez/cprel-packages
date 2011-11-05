@@ -24,7 +24,7 @@ namespace CPRelPkg {
     /// Provides
     MPG::CPRel::CPRelView provides_;
     /// Last computed relation of needed provides
-    mutable MPG::GRelation needed_;
+    //mutable MPG::GRelation needed_;
     /// Simple, tuple-based relation choice
     class RelChoice : public Choice {
     public:
@@ -50,14 +50,14 @@ namespace CPRelPkg {
   public:
     /// Constructor for a brancher on variable \a x
     NaiveBranch(Home home, MPG::CPRel::CPRelView inst, MPG::CPRel::CPRelView provides)
-      : Brancher(home), inst_(inst), provides_(provides), needed_(2) {}
+      : Brancher(home), inst_(inst), provides_(provides) {}
     /// Brancher posting
     static void post(Home home, MPG::CPRel::CPRelView inst, MPG::CPRel::CPRelView provides) {
       (void) new (home) NaiveBranch(home,inst, provides);
     }
     /// Constructor for clonning
     NaiveBranch(Space& home, bool share, NaiveBranch& b)
-      : Brancher(home,share,b), needed_(2) {
+      : Brancher(home,share,b) {
       inst_.update(home,share,b.inst_);
       provides_.update(home,share,b.provides_);
     }
@@ -76,7 +76,7 @@ namespace CPRelPkg {
       auto possibleProvides = inst_.glb().timesULeft(1).intersect(provides_.lub());
       auto alreadyProvided = provides_.glb().exists(1);
       
-      needed_.become(possibleProvides.difference(alreadyProvided));
+      auto needed_ = possibleProvides.difference(alreadyProvided);
       //std::cout << "Needed provides: " << needed_ << std::endl; 
       if (needed_.empty())
 	return false;
@@ -86,9 +86,15 @@ namespace CPRelPkg {
     virtual Choice* choice(Space&) {
       //GRelationIter it(x_.unk());
       //assert(!x_.unk().empty());
+      
+      auto possibleProvides = inst_.glb().timesULeft(1).intersect(provides_.lub());
+      auto alreadyProvided = provides_.glb().exists(1);      
+      auto needed_ = possibleProvides.difference(alreadyProvided);
+
       return new RelChoice(*this,needed_.pickOneTuple());
     }
     virtual Choice* choice(const Space&, Archive& e) {
+      assert(false);
       int arity;
       e >> arity;
       std::vector<int> t(arity,0);
