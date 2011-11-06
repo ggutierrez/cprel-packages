@@ -64,7 +64,6 @@ namespace CPRelPkg {
       auto installed = inst_.glb();
       
       {
-	//std::cout << "\tInstall before: " << installed.cardinality() << std::endl; 
 	// Create a relation with all the possible dependencies for
 	// installed, then intersect it with the dependencies that are
 	// known in the system. This will give us the dependencies
@@ -77,10 +76,25 @@ namespace CPRelPkg {
 	// inst_
 	auto toInclude = neededDeps.project(1);
 	GECODE_ME_CHECK(inst_.include(home,toInclude));
-	
-	//std::cout << "Needed " << neededDeps.cardinality() << " for the current installation" << std::endl; 
-	//std::cout << "\tInstall after: " << inst_.glb().cardinality() << std::endl; 
       }
+
+      { // The following code is correct but it has a lot impact on
+	// the solver running time for now. Probably it will be better
+	// to execute it only when needed (another event change on the
+	// variable?)
+
+	/*
+	// All the packages that have as dependencies packages that
+	// cannot be installed are not installable.
+	auto notInstallable = inst_.oob();
+	// get the unsatisfiable dependencies
+	auto unsatDependencies = notInstallable.timesULeft(1).intersect(dependencies_.glb());
+	// the packages to remove are present in the left column of
+	// the computed relation.
+	auto toExclude = unsatDependencies.shiftRight(1);
+	GECODE_ME_CHECK(inst_.exclude(home,toExclude));
+       */}
+      
       
       if (inst_.assigned() && dependencies_.assigned())
 	return home.ES_SUBSUMED(*this);

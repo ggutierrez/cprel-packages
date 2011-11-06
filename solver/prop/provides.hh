@@ -59,11 +59,44 @@ namespace CPRelPkg {
       using namespace Gecode;
 
       {
+	// This part maintains the coherence between the installation
+	// and the provides relation. For the moment this is tight to
+	// the fact that when a provides tuple is known then the
+	// concrete package of that tuple is installed. 
+
+	// Compute what is known to be provided and include the
+	// conrete packages in the installation.
 	auto provided = provides_.glb();
 	auto toInclude = provided.shiftRight(1);
 	GECODE_ME_CHECK(inst_.include(home,toInclude));
       }
       
+      {
+	// When there is only one provider possible for a package that
+	// is needed then we have to ensure the installation of it.
+	auto needed = inst_.glb();
+	auto possibleProviders = needed.timesULeft(1).intersect(provides_.lub());
+	auto uniqueProviders = possibleProviders.unique(1);
+	auto toIncludeProv = uniqueProviders.intersect(possibleProviders);
+	auto toIncludeInst = toIncludeProv.shiftRight(1);
+	//if(!uniqueProviders.empty())
+	//  std::cout << "Unique providers: " << toIncludeProv.difference(provides_.glb())  << std::endl; 
+	/*
+	{
+	  auto lastProviders = toInclude.difference(inst_.glb());
+	  if (!lastProviders.empty()) {
+	    
+	  }
+	}
+	*/
+	GECODE_ME_CHECK(inst_.include(home,toIncludeInst));
+	
+	// As result of the last statement we have to keep the
+	// consistency with the provides relation by including the new
+	// packages as providers.
+	GECODE_ME_CHECK(provides_.include(home,toIncludeProv));
+       }
+
       if (inst_.assigned() && provides_.assigned())
 	return home.ES_SUBSUMED(*this);
       return Gecode::ES_NOFIX;

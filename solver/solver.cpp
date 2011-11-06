@@ -64,8 +64,8 @@ namespace CPRelPkg {
 
   void Solver::print(std::ostream& os) const {
     os << "Cardinalities " << std::endl
-       << "\tInst_: " << inst_.glb().cardinality() << " / " << inst_.unk().cardinality() << std::endl
-       << "\tProvides_: " << provides_.glb().cardinality() << std::endl
+       << "\tInst_: " << inst_.glb() << " / " << inst_.unk().cardinality() << std::endl
+       << "\tProvides_: " << provides_.glb() << std::endl
        << std::endl; 
   }
 }
