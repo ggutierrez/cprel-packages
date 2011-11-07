@@ -48,26 +48,28 @@ namespace CPRelPkg {
     /// Cost
     virtual Gecode::PropCost cost(const Gecode::Space&,
 				  const Gecode::ModEventDelta&) const {
-      return Gecode::PropCost::binary(Gecode::PropCost::LO);
+      return Gecode::PropCost::binary(Gecode::PropCost::HI);
     }
     /// Main propagation algorithm
     virtual Gecode::ExecStatus propagate(Gecode::Space& home,
 					 const Gecode::ModEventDelta& med)  {
       using namespace Gecode;
       //std::cout << "Propagating conflicts" << std::endl; 
-      
       {
+	/*
 	auto m = MPG::CPRel::CPRelView::me(med);
 	if (m != MPG::CPRel::ME_CPREL_MAX) {
+	  std::cout << "Right time to run conflicts" << std::endl; 
+	  }*/
 	  // Create a relation with the installed packages and all the
 	  // packages they conflict with.
-	  auto installed = inst_.glb();
-	  auto conflicting = installed.timesURight(1).intersect(conflicts_.glb());
-	  auto conflictingPackages = conflicting.project(1);
-	  GECODE_ME_CHECK(inst_.exclude(home,conflictingPackages));
-	}
+	auto installed = inst_.glb();
+	auto conflicting = installed.timesURight(1).intersect(conflicts_.glb());
+	auto conflictingPackages = conflicting.project(1);
+	GECODE_ME_CHECK(inst_.exclude(home,conflictingPackages));
+	//std::cout << "Removing...new card unk " << inst_.unk().cardinality() << std::endl; 
+	//}
       }
-            
       if (inst_.assigned() && conflicts_.assigned())
 	return home.ES_SUBSUMED(*this);
       return Gecode::ES_FIX;

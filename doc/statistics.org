@@ -38,7 +38,7 @@
   
 * Solver
 
-** Constraints and brancher
+** Constraints and branchers
    Three main constraints act on the problem:
    - Dependencies :: : 
 		     - Add packages:
