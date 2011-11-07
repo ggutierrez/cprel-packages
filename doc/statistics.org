@@ -44,32 +44,38 @@
 		     - Add packages:
 		       - On installation inclusions. When a package
                          appears in the installation all its
-                         dependencies must be fulfilled.
+                         dependencies must be fulfilled.  [[file:../solver/prop/dependencies.hh::75][Implementation]]
 		     - Remove packages: A package cannot be installed
                        if at least one of its dependencies is not
-                       installable.
+                       installable.  [[file:../solver/prop/dependencies.hh::92][Implementation]]
    - Provides :: :
 		 - Add packages:
 		   - When a provided tuple becomes *known*, both
                      packages the provider and the virtual must be
-                     part of the installation.
+                     part of the installation.  [[file:../solver/prop/provides.hh::69][Implementation]]
 		   - When a package is installed, all the packages it
                      provides become installed and known in the
                      provides relation.
 		     
-		     This can be done in several ways. The first one
-                     is by implementing it as part of the propagator
-                     or by creating a /dependency/ between every
-                     concrete package and the packages it
-                     provides. This make sense since it is not
-                     possible to have a package installed without
-                     having the functionality it provides. This has
-                     the advantage that no extra code is needed and
-                     the /dependencies/ constraint will take care of
-                     this part.
+		     - This can be done in several ways. The first one
+                       is by implementing it as part of the propagator
+                       or by creating a /dependency/ between every
+                       concrete package and the packages it
+                       provides. This make sense since it is not
+                       possible to have a package installed without
+                       having the functionality it provides. This has
+                       the advantage that no extra code is needed and
+                       the /dependencies/ constraint will take care of
+                       this part.
+
+		     - As a concrete package provides itself, all the
+                       concrete packages that are *known* are used to
+                       update the provides relation to reflect this
+                       fact. This will prevent concrete packages from
+                       being selected by the brancher.  [[file:../solver/prop/provides.hh::77][Implementation]]
 		   - When there is only one provider for a package
                      that is needed in the installation the provider
-                     is installed.
+                     is installed. [[file:../solver/prop/provides.hh::88][Implementation]]
 		 - Remove packages: This constraint neither removes
                    packages from the installation nor tuples from
                    other relations.
