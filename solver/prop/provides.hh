@@ -49,11 +49,17 @@ namespace CPRelPkg {
     /// Cost
     virtual Gecode::PropCost cost(const Gecode::Space&,
 				  const Gecode::ModEventDelta&) const {
-      return Gecode::PropCost::binary(Gecode::PropCost::LO);
+      // This constraint should always have a bigger cost than the
+      // dependency propagator. The reason for this is that, as it is
+      // implemented now the dependency propagator does not compute a
+      // fix point every time it is run. Having a higher cost here
+      // will guarantee that it is always executed when we have gotten
+      // the most out of the dependencies.
+      return Gecode::PropCost::ternary(Gecode::PropCost::LO);
     }
     /// Main propagation algorithm
     virtual Gecode::ExecStatus propagate(Gecode::Space& home,
-					 const Gecode::ModEventDelta&)  {
+					 const Gecode::ModEventDelta& med)  {
       using namespace Gecode;
 
       {
@@ -76,23 +82,33 @@ namespace CPRelPkg {
 	auto providedByConcretes = installedConcretes.timesULeft(1).intersect(provides_.lub());
 	GECODE_ME_CHECK(provides_.include(home,providedByConcretes));
       }
-      /*
+      
+     
       {
-	// When there is only one provider possible for a package that
-	// is needed then we have to ensure the installation of it.
-	auto needed = inst_.glb();
-	auto possibleProviders = needed.timesULeft(1).intersect(provides_.lub());
-	auto uniqueProviders = possibleProviders.unique(1);
-	auto toIncludeProv = uniqueProviders.intersect(possibleProviders);
-	auto toIncludeInst = toIncludeProv.shiftRight(1);
-	GECODE_ME_CHECK(inst_.include(home,toIncludeInst));
-	
-	// As result of the last statement we have to keep the
-	// consistency with the provides relation by including the new
-	// packages as providers.
-	GECODE_ME_CHECK(provides_.include(home,toIncludeProv));
-       }
-      */
+	// The following propagation rule is only executed when the
+	// change in the relation variables is a removal. This is not
+	// as ine grained as I would like, because what we catually
+	// need is to run on the removal osa subrelation from the
+	// provides relation. Probably an advisor will do a better job
+	// here.
+	auto m = MPG::CPRel::CPRelView::me(med);
+	if (m != MPG::CPRel::ME_CPREL_MIN) {
+	  // When there is only one provider possible for a package that
+	  // is needed then we have to ensure the installation of it.
+	  auto needed = inst_.glb();
+	  auto possibleProviders = needed.timesULeft(1).intersect(provides_.lub());
+	  auto uniqueProviders = possibleProviders.unique(1);
+	  auto toIncludeProv = uniqueProviders.intersect(possibleProviders);
+	  auto toIncludeInst = toIncludeProv.shiftRight(1);
+	  GECODE_ME_CHECK(inst_.include(home,toIncludeInst));
+	  
+	  // As result of the last statement we have to keep the
+	  // consistency with the provides relation by including the new
+	  // packages as providers.
+	  GECODE_ME_CHECK(provides_.include(home,toIncludeProv));
+	}
+      }
+      
 
       if (inst_.assigned() && provides_.assigned())
 	return home.ES_SUBSUMED(*this);
