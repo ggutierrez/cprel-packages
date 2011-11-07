@@ -36,3 +36,55 @@
    | kmines |      64.2197 |   9.743 | 243 |   1035915 |      35.2547 |
    |--------+--------------+---------+-----+-----------+--------------|
   
+* Solver
+
+** Constraints and brancher
+   Three main constraints act on the problem:
+   - Dependencies :: : 
+		     - Add packages:
+		       - On installation inclusions. When a package
+                         appears in the installation all its
+                         dependencies must be fulfilled.
+		     - Remove packages: A package cannot be installed
+                       if at least one of its dependencies is not
+                       installable.
+   - Provides :: :
+		 - Add packages:
+		   - When a provided tuple becomes known, both
+                     packages the provider and the virtual must be
+                     part of the installation.
+		   - When a package is installed, all the packages it
+                     provides become installed and known in the
+                     provides relation.
+		   - When there is only one provider for a package
+                     that is needed in the installation the provider
+                     is installed.
+		 - Remove packages: This constraint neither removes
+                   packages from the installation nor tuples from
+                   other relations.
+   - Conflicts :: :
+		  - Add packages: This constraint does not add any
+                    package from the installantion and does not add
+                    any relation to other veriable.
+		  - Remove packages: when a package is installed, all
+                    the known conflicts of it must become
+                    uninstallable. This removes the conflicting
+                    packages from the installation.
+   - Brancher :: : There are several ways of branching this problem
+		 - /Stable providers/. This brancher enforces that
+                   /every/ package in the installation is provided by
+                   a package in the same installation. For this, the
+                   state of the brancher consists of the installation
+                   and the provides variables.
+		   - The brancher is /done/ when all the packages
+                     *knwon* in the installation have at *least one*
+                     provider.
+		   - When the brancher is *not done*, a subrelation of
+                     packages needing a provider is computed and one
+                     of the tuples of this relation is taken as a
+                     *choice*. This is represented by including it as
+                     *known* in the provides relation.
+		     
+		     This part of the brancher can be improved by an
+                     heuristic that makes a *reasonable* choice that
+                     could lead to a good solution.
