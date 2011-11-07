@@ -48,6 +48,13 @@
 		     - Remove packages: A package cannot be installed
                        if at least one of its dependencies is not
                        installable.  [[file:../solver/prop/dependencies.hh::92][Implementation]]
+
+		       
+		     This propagator does not computes a /fixed
+                     point/. Its own execution can lead to the
+                     inclusion of more packages that can lead to more
+                     prunning to be done.
+		     
    - Provides :: :
 		 - Add packages:
 		   - When a provided tuple becomes *known*, both
@@ -80,13 +87,20 @@
                    packages from the installation nor tuples from
                    other relations.
    - Conflicts :: :
-		  - Add packages: This constraint does not add any
+		  - Add packages: This constraint *does not* add any
                     package from the installantion and does not add
                     any relation to other veriable.
 		  - Remove packages: when a package is installed, all
                     the known conflicts of it must become
                     uninstallable. This removes the conflicting
                     packages from the installation.
+ 
+		  This propagator computes a fix point. The reason is
+                  that the conflict relation is symetric and not
+                  transitive. Therefore, running the prunning algorith
+                  will not add further information that will lead to a
+                  re-execution of itself.
+
    - Brancher :: : There are several ways of branching this problem
 		 - /Stable providers/. This brancher enforces that
                    /every/ package in the installation is provided by

@@ -102,6 +102,7 @@ add_library(cprelsolver
   solver/solver.cpp
   solver/prop/dependencies.cpp
   solver/prop/provides.cpp
+  solver/prop/conflicts.cpp
   solver/branch/stableProvides.cpp
 )
 

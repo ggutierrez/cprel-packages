@@ -2,6 +2,7 @@
 #include <solversupport/pkg-builtins.hh>
 #include <solver/prop/dependencies.hh>
 #include <solver/prop/provides.hh>
+#include <solver/prop/conflicts.hh>
 
 namespace CPRelPkg {
 
@@ -45,6 +46,7 @@ namespace CPRelPkg {
       // the dependencies of all packages must be ensured
       dependencies(*this,inst_,dependencies_);
       provides(*this,inst_,provides_);
+      conflicts(*this,inst_,conflicts_);
     }
 
     // branch
