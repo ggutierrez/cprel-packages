@@ -50,12 +50,23 @@
                        installable.
    - Provides :: :
 		 - Add packages:
-		   - When a provided tuple becomes known, both
+		   - When a provided tuple becomes *known*, both
                      packages the provider and the virtual must be
                      part of the installation.
 		   - When a package is installed, all the packages it
                      provides become installed and known in the
                      provides relation.
+		     
+		     This can be done in several ways. The first one
+                     is by implementing it as part of the propagator
+                     or by creating a /dependency/ between every
+                     concrete package and the packages it
+                     provides. This make sense since it is not
+                     possible to have a package installed without
+                     having the functionality it provides. This has
+                     the advantage that no extra code is needed and
+                     the /dependencies/ constraint will take care of
+                     this part.
 		   - When there is only one provider for a package
                      that is needed in the installation the provider
                      is installed.
@@ -76,15 +87,28 @@
                    a package in the same installation. For this, the
                    state of the brancher consists of the installation
                    and the provides variables.
-		   - The brancher is /done/ when all the packages
-                     *knwon* in the installation have at *least one*
-                     provider.
-		   - When the brancher is *not done*, a subrelation of
-                     packages needing a provider is computed and one
-                     of the tuples of this relation is taken as a
-                     *choice*. This is represented by including it as
-                     *known* in the provides relation.
-		     
-		     This part of the brancher can be improved by an
-                     heuristic that makes a *reasonable* choice that
-                     could lead to a good solution.
+		   - Brancher functionality:
+		     - The brancher is /done/ when all the packages
+		       *knwon* in the installation have at *least one*
+		       provider.
+		     - When the brancher is *not done*, a subrelation of
+		       packages needing a provider is computed and one
+		       of the tuples of this relation is taken as a
+		       *choice*. This is represented by including it as
+		       *known* in the provides relation.
+
+		       This part of the brancher can be improved by an
+		       heuristic that makes a *reasonable* choice that
+		       could lead to a good solution.
+		   - Important remarks: 
+		     - The brancher should only select provides tuples
+                       that involve virtual packages. It is a mistake
+                       if the brancher chooses a provider for a
+                       concrete package.
+		     - While the brancher is computing whether it is
+                       done or not it can store some information that
+                       will be used during the /choice/ part. This
+                       information is the subrelation of packages that
+                       need to be provided and the ways for doing it.
+
+
