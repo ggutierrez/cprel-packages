@@ -1,5 +1,4 @@
 #include <solver/prop/dependencies.hh>
-#undef fail
 
 namespace CPRelPkg {
   void dependencies(Gecode::Space& home, MPG::CPRelVar installation, MPG::CPRelVar dependencies) {

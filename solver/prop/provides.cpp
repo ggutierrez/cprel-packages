@@ -1,5 +1,4 @@
 #include <solver/prop/provides.hh>
-#undef fail
 
 namespace CPRelPkg {
   void provides(Gecode::Space& home, MPG::CPRelVar installation, MPG::CPRelVar provides) {
