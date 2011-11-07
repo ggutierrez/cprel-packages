@@ -19,6 +19,8 @@ void search(CPRelPkg::Solver *root, int sols = 0) {
   
   int solutionsFound = 0;
   std::cout << "### Search will start" << std::endl;
+  // start measuring the total search time.
+  auto totalTime = bc::system_clock::now();
   while (Gecode::Space* s = e.next()) {
     static_cast<CPRelPkg::Solver*>(s)->print(std::cout);
     solutionsFound++;
@@ -29,7 +31,9 @@ void search(CPRelPkg::Solver *root, int sols = 0) {
       break;
     }
   }
-  std::cout << "### search ends, Total solutions: " << solutionsFound << std::endl; 
+  bc::duration<double> totalDuration = bc::system_clock::now() - totalTime;
+  std::cout << "### search ends, Total solutions: " << solutionsFound << std::endl
+	    <<  "\tTotal time: " << totalDuration << std::endl; 
 
 }
 

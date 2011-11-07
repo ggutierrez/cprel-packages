@@ -19,15 +19,12 @@ namespace CPRelPkg {
     /// Constructor for the propagator \f$ equal(left,right) \f$
     Provides(Gecode::Home home,  MPG::CPRel::CPRelView inst,  MPG::CPRel::CPRelView dep)
       : Gecode::Propagator(home), inst_(inst), provides_(dep) {
-      std::cout << "Provides(ctor)" << std::endl; 
       inst_.subscribe(home,*this,MPG::CPRel::PC_CPREL_BND);
       provides_.subscribe(home,*this,MPG::CPRel::PC_CPREL_BND);
-      std::cout << "Provides(ctor)*" << std::endl; 
     }
     /// Propagator posting
     static Gecode::ExecStatus post(Gecode::Home home,
 				    MPG::CPRel::CPRelView inst,  MPG::CPRel::CPRelView dep) {
-      std::cout << "Provides(post)" << std::endl; 
       (void) new (home) Provides(home,inst,dep);
       return Gecode::ES_OK;
     }
@@ -70,7 +67,7 @@ namespace CPRelPkg {
 	auto toInclude = provided.shiftRight(1);
 	GECODE_ME_CHECK(inst_.include(home,toInclude));
       }
-      
+      /*
       {
 	// When there is only one provider possible for a package that
 	// is needed then we have to ensure the installation of it.
@@ -79,16 +76,6 @@ namespace CPRelPkg {
 	auto uniqueProviders = possibleProviders.unique(1);
 	auto toIncludeProv = uniqueProviders.intersect(possibleProviders);
 	auto toIncludeInst = toIncludeProv.shiftRight(1);
-	//if(!uniqueProviders.empty())
-	//  std::cout << "Unique providers: " << toIncludeProv.difference(provides_.glb())  << std::endl; 
-	/*
-	{
-	  auto lastProviders = toInclude.difference(inst_.glb());
-	  if (!lastProviders.empty()) {
-	    
-	  }
-	}
-	*/
 	GECODE_ME_CHECK(inst_.include(home,toIncludeInst));
 	
 	// As result of the last statement we have to keep the
@@ -96,6 +83,7 @@ namespace CPRelPkg {
 	// packages as providers.
 	GECODE_ME_CHECK(provides_.include(home,toIncludeProv));
        }
+      */
 
       if (inst_.assigned() && provides_.assigned())
 	return home.ES_SUBSUMED(*this);

@@ -19,15 +19,12 @@ namespace CPRelPkg {
     /// Constructor for the propagator \f$ equal(left,right) \f$
     Dependencies(Gecode::Home home,  MPG::CPRel::CPRelView inst,  MPG::CPRel::CPRelView dep)
       : Gecode::Propagator(home), inst_(inst), dependencies_(dep) {
-      std::cout << "Dependencies(ctor)" << std::endl; 
       inst_.subscribe(home,*this,MPG::CPRel::PC_CPREL_BND);
       dependencies_.subscribe(home,*this,MPG::CPRel::PC_CPREL_BND);
-      std::cout << "Dependencies(ctor)*" << std::endl; 
     }
     /// Propagator posting
     static Gecode::ExecStatus post(Gecode::Home home,
 				    MPG::CPRel::CPRelView inst,  MPG::CPRel::CPRelView dep) {
-      std::cout << "Dependencies(post)" << std::endl; 
       (void) new (home) Dependencies(home,inst,dep);
       return Gecode::ES_OK;
     }

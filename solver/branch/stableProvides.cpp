@@ -131,7 +131,6 @@ namespace CPRelPkg {
    */
   void stableProvides(Home home, MPG::CPRelVar inst, MPG::CPRelVar provides) {
     if (home.failed()) return;
-    std::cout << "Posting distributor" << std::endl; 
     NaiveBranch::post(home,inst,provides);
   }
 }
