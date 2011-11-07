@@ -14,6 +14,8 @@ namespace CPRelPkg {
     MPG::CPRelVar conflicts_;
     MPG::CPRelVar provides_;
     MPG::CPRelVar inst_;
+    /// A relation storing the concrete packages
+    MPG::GRelation concretes_;
   public:
     /// Constructor
     Solver(const ProblemDesc& problem);
@@ -23,6 +25,9 @@ namespace CPRelPkg {
     Gecode::Space* copy(bool share);
     /// Print solution to stream \a os
     void print(std::ostream& os) const;
+    /// Return a relation with the concrete packages
+    MPG::GRelation getConcretes(void) const;
+	
   };
 
   void stableProvides(Gecode::Home home, MPG::CPRelVar inst, MPG::CPRelVar provides);

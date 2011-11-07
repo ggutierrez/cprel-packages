@@ -5,7 +5,9 @@
 
 namespace CPRelPkg {
 
-  Solver::Solver(const ProblemDesc& problem) {
+  Solver::Solver(const ProblemDesc& problem)
+    : concretes_(std::get<4>(problem)){
+    
     dependencies_ = MPG::CPRelVar(*this,
 				  std::get<1>(problem),
 				  MPG::GRelation::create_full(2)
@@ -51,7 +53,7 @@ namespace CPRelPkg {
   }
 
   Solver::Solver(bool share, Solver& s)
-    : Gecode::Space(share,s) {
+    : Gecode::Space(share,s), concretes_(s.concretes_) {
     dependencies_.update(*this,share,s.dependencies_);
     conflicts_.update(*this,share,s.conflicts_);
     provides_.update(*this,share,s.provides_);
@@ -60,6 +62,10 @@ namespace CPRelPkg {
 
   Gecode::Space* Solver::copy(bool share) {
     return new Solver(share,*this);
+  }
+
+  MPG::GRelation Solver::getConcretes(void) const {
+    return concretes_;
   }
 
   void Solver::print(std::ostream& os) const {

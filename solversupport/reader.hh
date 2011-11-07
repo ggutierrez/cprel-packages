@@ -5,7 +5,7 @@
 #include <rel/grelation.hh>
 
 namespace CPRelPkg {
-  /// A problem is a tuple of ground relations: <Packages,Dependencies,Conflicts,Provides>
+  /// A problem is a tuple of ground relations: <Packages,Dependencies,Conflicts,Provides,Concretes>
   typedef std::tuple<MPG::GRelation,MPG::GRelation,MPG::GRelation,MPG::GRelation,MPG::GRelation>
   ProblemDesc;
 

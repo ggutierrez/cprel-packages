@@ -2,6 +2,7 @@
 #define __CPREL_PACKAGES_SOLVER_PROP_PROVIDES_HH__
 
 #include <cprel/cprel.hh>
+#include <solver/solver.hh>
 
 namespace CPRelPkg {
 
@@ -66,6 +67,14 @@ namespace CPRelPkg {
 	auto provided = provides_.glb();
 	auto toInclude = provided.shiftRight(1);
 	GECODE_ME_CHECK(inst_.include(home,toInclude));
+
+	// Every concrete package that is installed is a provider of
+	// itself and will appear in the provides relation.
+	const Solver& sp = static_cast<const Solver&>(home);
+	auto concretes = sp.getConcretes();
+	auto installedConcretes = concretes.intersect(inst_.glb());
+	auto providedByConcretes = installedConcretes.timesULeft(1).intersect(provides_.lub());
+	GECODE_ME_CHECK(provides_.include(home,providedByConcretes));
       }
       /*
       {

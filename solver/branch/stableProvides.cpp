@@ -84,14 +84,26 @@ namespace CPRelPkg {
     }
     /// Creates a choice by selecting a tuple from the unknown of the variable
     virtual Choice* choice(Space&) {
-      //GRelationIter it(x_.unk());
-      //assert(!x_.unk().empty());
-      
-      auto possibleProvides = inst_.glb().timesULeft(1).intersect(provides_.lub());
-      auto alreadyProvided = provides_.glb().exists(1);      
-      auto needed_ = possibleProvides.difference(alreadyProvided);
+      // This is repreated work. We already computed this for deciding
+      // if the brancher should be still active or not. A better
+      // approach is to keep a ground relation that stores the
+      // subrelation computed at status and then to use it here.
 
-      return new RelChoice(*this,needed_.pickOneTuple());
+      auto possibleProvides = inst_.glb().timesULeft(1).intersect(provides_.lub());
+      auto alreadyProvided = provides_.glb().exists(1) ;      
+      auto needed_ = possibleProvides.difference(alreadyProvided);
+      MPG::Tuple choosen = needed_.pickOneTuple();
+
+      /*
+      auto value = choosen.value();
+      if (value.at(0) == value.at(1))
+	std::cerr << "Bad choice!!! " << choosen << std::endl; 
+      */
+      // the choosen tuple cannot represent a concrete package
+      // providing itself.
+
+
+      return new RelChoice(*this,choosen);
     }
     virtual Choice* choice(const Space&, Archive& e) {
       assert(false);
