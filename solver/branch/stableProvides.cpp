@@ -125,10 +125,10 @@ namespace CPRelPkg {
       MPG::GRelation r(ch.t_.arity());
       r.add(ch.t_);
       if (a == 0) {
-	//std::cout << "-> Brancher adding: " << r << std::endl;
+	std::cout << "-> Brancher adding: " << r << std::endl;
 	return Gecode::me_failed(provides_.include(home,r)) ? ES_FAILED : ES_OK;
       } else {
-	//std::cout << "-> Brancher removing: " << r << std::endl;
+	std::cout << "-> Brancher removing: " << r << std::endl;
 	return Gecode::me_failed(provides_.exclude(home,r)) ? ES_FAILED : ES_OK;
       }
     }

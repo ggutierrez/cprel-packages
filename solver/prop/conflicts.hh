@@ -67,7 +67,7 @@ namespace CPRelPkg {
 	auto conflicting = installed.timesURight(1).intersect(conflicts_.glb());
 	auto conflictingPackages = conflicting.project(1);
 	GECODE_ME_CHECK(inst_.exclude(home,conflictingPackages));
-	//std::cout << "Removing...new card unk " << inst_.unk().cardinality() << std::endl; 
+	std::cout << "Removing...new card unk " << conflictingPackages << std::endl; 
 	//}
       }
       if (inst_.assigned() && conflicts_.assigned())

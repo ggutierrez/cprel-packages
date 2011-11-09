@@ -83,14 +83,25 @@ namespace CPRelPkg {
 	GECODE_ME_CHECK(provides_.include(home,providedByConcretes));
       }
       
-     
+      {
+	// Every package in the installation needs at least one
+	// provider. If this does not hold then this constraint must
+	// fail.
+	auto possibleProvides = inst_.glb().timesULeft(1).intersect(provides_.lub());
+	auto canBeProvided = possibleProvides.project(1);
+	if (!inst_.glb().eq(canBeProvided)) {
+	  std::cout << "There is no provider for " << inst_.glb().difference(canBeProvided) << std::endl; 
+	  return ES_FAILED;
+	}
+      }
+
       {
 	// The following propagation rule is only executed when the
-	// change in the relation variables is a removal. This is not
-	// as ine grained as I would like, because what we catually
-	// need is to run on the removal osa subrelation from the
-	// provides relation. Probably an advisor will do a better job
-	// here.
+	// change in the relation variables is an exclusion. This is
+	// not as fine grained as I would like, because what we
+	// catually need is to run on the removal osa subrelation from
+	// the provides relation. Probably an advisor will do a better
+	// job here.
 	auto m = MPG::CPRel::CPRelView::me(med);
 	if (m != MPG::CPRel::ME_CPREL_MIN) {
 	  // When there is only one provider possible for a package that
