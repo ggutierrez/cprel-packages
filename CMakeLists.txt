@@ -92,9 +92,24 @@ else()
   message(FATAL_ERROR "Libkcudf is needed to build this project")
 endif()
 ##########################################################################
+# Bison / Flex
+##########################################################################
+find_package(Bison REQUIRED)
+find_package(Flex REQUIRED)
+BISON_TARGET(cudfparser ${CMAKE_SOURCE_DIR}/cudf/cudf.y 
+  ${CMAKE_CURRENT_BINARY_DIR}/cudf.tab.cpp COMPILE_FLAGS "--name-prefix=cudf")
+
+ FLEX_TARGET(cudflexer ${CMAKE_SOURCE_DIR}/cudf/cudf.l
+  ${CMAKE_CURRENT_BINARY_DIR}/cudflexer.cpp COMPILE_FLAGS "--bison-bridge --prefix=cudf")
+ ADD_FLEX_BISON_DEPENDENCY(cudflexer cudfparser)
+##########################################################################
 # This project products
 ##########################################################################
 include_directories(${CMAKE_SOURCE_DIR})
+
+message(STATUS "Parser output files: ${BISON_cudfparser_OUTPUTS}")
+add_library(unsaparser ${BISON_cudfparser_OUTPUTS} ${FLEX_cudflexer_OUTPUTS})
+
 add_executable(statistics tools/stats.cpp)
 target_link_libraries(statistics ${CUDF_LIB} ${KCUDF_LIB} ${CPREL_LIBRARIES} ${Boost_LIBRARIES})
 
