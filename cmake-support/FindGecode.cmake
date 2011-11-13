@@ -1,9 +1,16 @@
 
 message(STATUS "Finding Gecode...")
 
-#Works under the assumption than when gecode is installed at least the kernel component exists
-# Look for the header file
+# Works under the assumption than when gecode is installed at least
+# the kernel component exists. This version of the module does not
+# handle MacOS frameworks. So it will only detect a gecode built.
 
+# After using this module, the following variables will be available:
+#   GECODE_VERSION : The version of gecode found
+#   GECODE_LIBRARIES : The gecode libraries that were found.
+#   GECODE_INCLUDE_DIR : path to the gecode headers.
+
+# Look for the main header files of gecode.
 find_path(GECODE_INCLUDE_DIR NAMES gecode/kernel.hh)
 find_file(GECODE_CONFIG gecode/support/config.hpp)
 

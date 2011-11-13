@@ -132,3 +132,59 @@
                        need to be provided and the ways for doing it.
 
 
+
+* CUDF parsing
+  This section presents a description about how /CUDF/ files are
+  parsed and the respective constraints of the problem are
+  generated. The whole process starts by parsing the file and filling
+  some data structures. The parsing process identifies three different
+  types of packages:
+  - Concrete packages :: : /CUDFPackage/. Contains the attributes:
+       /name/, /rank/ and /versioned_name/.
+  - Versioned packages :: : /CUDFVersionedPackage/, inherits from
+       /CUDFPackage/ and contains the attributes:
+    - version :: : the version of the package in the input.
+    - depends :: the representation of a /VpkgFormula/ according with
+                 the /CUDF/ specification.
+    - conflicts :: : a /VpkgList/ with the packages that conflict.
+    - provides :: : a /VpkgList/ with the packages that are provided.
+    - installed - wasInstalled :: two booleans that indicate the state
+         of the package in the input and at the end of the solving
+         process.
+    - keep :: the information regarding what can be done with the
+              package.
+    - properties :: extra properties in the package statement.
+    - virtual_package :: *to be added*
+  - Virtual packages :: : /CUDFVirtualPackage/, inherits from
+       /CUDFPackage/ and contains the attributes:
+    - all_versions :: : a versioned package set.
+    - highest_installed :: : *to be filled*
+    - highest_version :: : *to be filled*
+    - providers :: a list of providers.
+    - versioned_providers :: *to be filled*
+    - highest_installed_provider_version :: *to be filled*
+ 
+  The parser defines the following types for the containers used
+  during the process.
+  - CUDFproblem :: : Is a class that stores the information of the
+                   request made by the user. It contains the following
+                   attributes:
+    - install :: : List of packages to be installed.
+    - remove :: : List of packages to be removed.
+    - upgrade :: : List of packages for upgrade.
+  - CUDFVersionedPackageList :: : an /stl vector/
+  - CUDFVersionedPackageSet :: : an /stl set/
+  - CUDFProviderList :: an /stl vector/
+  - CUDFVersionedProviderList :: an /stl map/ that associates a
+       /version/ with a /provider list/.
+  - CUDFVirtualPackageList :: an /stl vector/ 
+       
+  The parser reads a /CUDF/ input and fill in the following data
+  structures:
+  - the_problem :: : CUDFproblem.
+  - all_packages :: : CUDFVersionedPackageList
+  - installed_packages :: : CUDFVersionedPackageList
+  - uninstalled_packages :: : CUDFVersionedPackageList
+  - all_virtual_packages :: : CUDFVirtualPackageList
+
+   
