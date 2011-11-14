@@ -122,4 +122,11 @@ add_library(cprelsolver
 )
 
 add_executable(solver tools/solver.cpp)
-target_link_libraries(solver cprelsolver ${CUDF_LIB} ${KCUDF_LIB} ${CPREL_LIBRARIES} ${Boost_LIBRARIES} ${GECODE_LIBRARIES})
+target_link_libraries(solver cprelsolver 
+  ${CUDF_LIB} ${KCUDF_LIB} 
+  ${CPREL_LIBRARIES} 
+  ${Boost_LIBRARIES} 
+  ${GECODE_LIBRARIES})
+
+add_executable(cudfstats tools/cudfstats.cpp)
+target_link_libraries(cudfstats unsaparser)

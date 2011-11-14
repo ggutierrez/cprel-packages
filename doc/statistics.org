@@ -186,5 +186,9 @@
   - installed_packages :: : CUDFVersionedPackageList
   - uninstalled_packages :: : CUDFVersionedPackageList
   - all_virtual_packages :: : CUDFVirtualPackageList
+       
+  The function /parse_cudf/ that takes a ponter to a /FILE/ is also
+  provided. This function is called and afterwards the data structures
+  above are filled.
 
    
