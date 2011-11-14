@@ -15,7 +15,56 @@
 #+LINK_UP:   
 #+LINK_HOME: 
 #+XSLT:
+* Basic CUDF file (legacy)
+  |-----------------+---------+-----------|
+  | Package         | Version | Installed |
+  |-----------------+---------+-----------|
+  | car             |       1 | true      |
+  | bicycle         |       7 |           |
+  | gasoline-engine |       1 | true      |
+  | gasoline-engine |       2 |           |
+  | electric-engine |       1 |           |
+  | electric-engine |       2 |           |
+  | solar-collector |       1 |           |
+  | battery         |       3 | true      |
+  | wheel           |       3 |           |
+  | wheel           |       2 | true      |
+  | door            |       2 | true      |
+  | door            |       2 |           |
+  | turbo           |       1 | true      |
+  | tire            |       1 |           |
+  | tire            |       2 |           |
+  | window          |       1 |           |
+  | window          |       2 |           |
+  | window          |       3 |           |
+  | glass           |       1 |           |
+  | glass           |       2 |           |
+  |-----------------+---------+-----------|
 
+  The virtual packages in the problem are:
+  |-----------------+-------------------|
+  | Package         | Provided by       |
+  |-----------------+-------------------|
+  | engine          | gasoline-engine,1 |
+  |                 | gasoline-engine,2 |
+  |                 | electric-engine,1 |
+  |                 | electric-engine,2 |
+  | huge-battery    | battery,3         |
+  | battery         | battery,3         |
+  | wheel           |                   |
+  | door            |                   |
+  | window          |                   |
+  | tire            |                   |
+  | glass           |                   |
+  | turbo           |                   |
+  | bycicle         |                   |
+  | gasoline-engine |                   |
+  | electric-engine |                   |
+  | solar-colector  | solar-colector,1  |
+  | car             | car,1             |
+  |-----------------+-------------------|
+ 
+ 
 * Instance description
   |--------+----------+--------------+-----------+----------|
   | Name   | Packages | Dependencies | Conflicts | Provides |
@@ -140,7 +189,8 @@
   some data structures. The parsing process identifies three different
   types of packages:
   - Concrete packages :: : /CUDFPackage/. Contains the attributes:
-       /name/, /rank/ and /versioned_name/.
+       /name/, /rank/ and /versioned_name/. /rank/ is a consecutive
+       identifier associated with every package in the universe.
   - Versioned packages :: : /CUDFVersionedPackage/, inherits from
        /CUDFPackage/ and contains the attributes:
     - version :: : the version of the package in the input.
@@ -192,3 +242,13 @@
   above are filled.
 
    
+
+* UNSA solver
+  This solver uses linear programming to solve the /Package
+  Installability Problem/. It generates the constraints and the
+  optimization function from the parsed file. There are several
+  predefined criteria that will influence the generated objective
+  function. It provides a function call /generate_constraints/ that
+  takes care of everything.
+
+  
