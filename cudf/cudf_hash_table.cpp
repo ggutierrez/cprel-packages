@@ -5,7 +5,7 @@
 /*******************************************************/
 
 
-#include <cudf_hash_table.h>
+#include <cudf/cudf_hash_table.hh>
 #ifdef HASH_STRING
 #include <string>
 #endif

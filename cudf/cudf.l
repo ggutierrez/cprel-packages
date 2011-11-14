@@ -9,7 +9,7 @@
 
 %{
 
-#include <cudf/cudf.h>
+#include <cudf/cudf.hh>
 #include <stdio.h>
 #include "cudf.tab.hpp"
 
@@ -22,7 +22,6 @@ extern int pidenttype(char *pname);
 
 %}
 %x anstr keepstate proptype linestring
-%option bison-bridge
 %option yylineno
 %option noyywrap
 

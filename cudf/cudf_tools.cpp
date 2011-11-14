@@ -5,7 +5,7 @@
 /*******************************************************/
 
 
-#include <cudf.h>
+#include <cudf/cudf.hh>
 
 
 CUDFProperties properties;

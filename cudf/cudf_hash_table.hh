@@ -8,7 +8,7 @@
 #ifndef CUDF_HASH_TABLE_H
 #define CUDF_HASH_TABLE_H
 
-#include <cudf/cudf.h>
+#include <cudf/cudf.hh>
 
 //#define HASHMAP 1
 

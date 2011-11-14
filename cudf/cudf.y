@@ -9,8 +9,8 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <cudf/cudf.h>
-#include <cudf/cudf_hash_table.h>
+#include <cudf/cudf.hh>
+#include <cudf/cudf_hash_table.hh>
 
 extern int cudflineno;
 extern int cudflex (void);
