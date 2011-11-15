@@ -2,12 +2,58 @@
 #include <cudf/cudf.hh>
 
 using namespace std;
+
+/// Prints the dependencies of \a ipkg
+void dependencies(CUDFVersionedPackage *pkg) {
+  const CUDFVersionedPackage& ipkg = *pkg;
+  if (ipkg.depends == NULL) {
+    return;
+  }
+  
+  for (const CUDFVpkgList *anddep : *(ipkg.depends)) {
+    // every _anddep_ is a conjuntion of disjuntions. We will traverse
+    // now the disjunctions.
+    
+    // store if there is a self-dependency
+    bool self_depend = false;
+    for (const CUDFVpkg *ordep : *anddep) {
+      const CUDFVirtualPackage& vpackage = *(ordep->virtual_package);  
+      cout << "\t\t" << vpackage.name << " {";
+      // is there a concrete package that provides it?
+      if (vpackage.all_versions.size() > 0) {
+        for (CUDFVersionedPackage *jpkg : vpackage.all_versions) {
+          cout << jpkg->name << "," << jpkg->version << " ";
+          if (jpkg == pkg) { // there is a self dependency
+            self_depend = true;
+            break;
+          }
+        } 
+      }
+      // is there a provider for it?
+      if (!self_depend && vpackage.providers.size() > 0) {
+        for (CUDFVersionedPackage *jpkg : vpackage.providers) {
+          cout << jpkg->name << "," << jpkg->version << " ";
+          if (jpkg == pkg) { // there is a self dependency
+            self_depend = true;
+            break;
+          }
+        }
+      }
+      
+      cout << "}" << endl;
+    }
+    cout << endl;
+  }
+}
+
 void printUniverse(void) {
   cout << "Packages in the universe" << endl;
   for (CUDFVersionedPackage *pkg : all_packages) {
     cout << pkg->name << "," << pkg->version << " rank: " << pkg->rank << endl;
+    dependencies(pkg);
   }
 }
+
 
 void printVirtuals(void) {
   for (CUDFVirtualPackage *vp : all_virtual_packages) {
@@ -70,7 +116,7 @@ int main(int argc, char* argv[]) {
   if (the_problem->remove != NULL)
   cout << "\t\tremove: " << the_problem->remove->size() << endl;
 
-  printVirtuals();
+  //printVirtuals();
   printUniverse();
   return 0;
 }

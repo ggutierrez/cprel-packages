@@ -251,4 +251,65 @@
   function. It provides a function call /generate_constraints/ that
   takes care of everything.
 
-  
+  For this solver, the problem is a /minimization/. Every column in
+  the linear model represents a package. The bounds for a variable
+  (that represents a package) are 0 to 1. Every variable is set to be
+  binary.
+
+** Solver state
+   The solver provides an easy adaptation of different solver
+   implementations. In this section we will describe the interface
+   with /lp_solve/.
+   
+   The state of the solver consists of:
+   1. *rank* : an integer, initialized to zero and is reset every time
+      a new constraint will be added to the model.
+   2. *nb_packages* : stores the number of packages that are involved
+      in the model. This attribute is initialized with the number of
+      packages in the universe.
+   3. *nb_vars* : stores the number of variables. This attribute gets
+      initialized with the number of packages plus the *other_vars*
+      parameter of the solver initializer method.
+   4. *coefficient* : an array of /double/ of size *nb_vars* + 1. This
+      attribute represent the coefficient of every variable in the
+      objective function. 
+   5. *index* :  an array of integers of size *nb_vars* + 1.
+** Package constraints
+   The dependencies and conflicts of every package are represente as
+   constraints in the minimization problem.
+*** Dependencies
+    The dependencies of a package are represented as a /conjunction/
+    of /disjunctions/. For instance, a package $p$ can have the
+    following dependencies: $\{r \land s \land (t \lor u)\}$. Meaning
+    that for $p$ to be installed, $r$ and $s$ must be installed and
+    either $t$ or $u$.
+    
+    Three constraints are used represent these dependencies in the
+    model: 
+    \begin{align*}
+    &-1p +1r &\geq 0 \\
+    &-1p +1s &\geq 0 \\
+    &-1p +1t +1u\geq 0\\
+    \end{align*}
+    Note that the dependency relation relies on the fact that all the
+    constraints in the model must be satisfied. When $p$ gets
+    installed the only way for the constraints representing the
+    dependency is that at least one of the other packages gets
+    installed.
+*** Conflicts
+    Suppose there are two packages $p$ and $q$ that conflict. The way
+    to encode this as a constraint in a LP model is: $-1p -1q \geq
+    -1$. As $p$ and $q$ are have as possible values either 0 or 1 then
+    the constraint has the follow behavior:
+    |---+---+------------+--------|
+    | p | q | Constraint | Holds? |
+    |---+---+------------+--------|
+    | 0 | 0 |          0 | Yes    |
+    | 1 | 0 |         -1 | Yes    |
+    | 0 | 1 |         -1 | Yes    |
+    | 1 | 1 |         -2 | No     |
+    |---+---+------------+--------|
+    where the values for columns $p$ and $q$ denote the existence or
+    inexistence of the package in the system.
+
+    
