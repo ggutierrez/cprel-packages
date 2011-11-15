@@ -9,7 +9,7 @@ void dependencies(CUDFVersionedPackage *pkg) {
   if (ipkg.depends == NULL) {
     return;
   }
-  
+  bool has_coeff = false;
   for (const CUDFVpkgList *anddep : *(ipkg.depends)) {
     // every _anddep_ is a conjuntion of disjuntions. We will traverse
     // now the disjunctions.
@@ -17,30 +17,61 @@ void dependencies(CUDFVersionedPackage *pkg) {
     // store if there is a self-dependency
     bool self_depend = false;
     for (const CUDFVpkg *ordep : *anddep) {
-      const CUDFVirtualPackage& vpackage = *(ordep->virtual_package);  
+      const CUDFVirtualPackage& vpackage = *(ordep->virtual_package);
+      a_compptr comp = get_comparator(ordep->op);
+
       cout << "\t\t" << vpackage.name << " {";
       // is there a concrete package that provides it?
       if (vpackage.all_versions.size() > 0) {
-        for (CUDFVersionedPackage *jpkg : vpackage.all_versions) {
-          cout << jpkg->name << "," << jpkg->version << " ";
-          if (jpkg == pkg) { // there is a self dependency
-            self_depend = true;
-            break;
-          }
-        } 
+        for (CUDFVersionedPackage *jpkg : vpackage.all_versions)
+          if (comp(jpkg->version,ordep->version)) {
+            if (jpkg == pkg) { // there is a self dependency
+              self_depend = true;
+              has_coeff = false;
+              break;
+            } else {
+              // add constraint
+              has_coeff = true;
+              cout << jpkg->name << "," << jpkg->version << " ";
+            }
+          } 
       }
+
       // is there a provider for it?
       if (!self_depend && vpackage.providers.size() > 0) {
-        for (CUDFVersionedPackage *jpkg : vpackage.providers) {
-          cout << jpkg->name << "," << jpkg->version << " ";
+        for (CUDFVersionedPackage *jpkg : vpackage.providers)
           if (jpkg == pkg) { // there is a self dependency
             self_depend = true;
+            has_coeff = false;
             break;
-          }
-        }
+          } else {
+            has_coeff = true;
+            cout << jpkg->name << "," << jpkg->version << " ";
+          } 
       }
-      
+
+      // is there a versioned provider?
+      if (!self_depend) {
+        for (auto& jpkg : vpackage.versioned_providers)
+          if (self_depend) break;
+          else if (comp(jpkg.first, ordep->version))
+            for (CUDFVersionedPackage *kpkg : jpkg.second)
+              if (kpkg == pkg) {
+                self_depend = true;
+                has_coeff = false;
+                break;
+              } else {
+                has_coeff = true;
+                // add constraint
+                cout << kpkg->name << "," << kpkg->version << " ";
+              }
+      }
       cout << "}" << endl;
+    }
+    if (has_coeff) {
+      cout << "\t\tA constraint was posted" << endl;
+    } else if (!self_depend) {
+      cout << "\t\tNo coeff and no self depend " << ipkg.name << "," << ipkg.version << endl;
     }
     cout << endl;
   }

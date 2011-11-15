@@ -300,16 +300,6 @@
     Suppose there are two packages $p$ and $q$ that conflict. The way
     to encode this as a constraint in a LP model is: $-1p -1q \geq
     -1$. As $p$ and $q$ are have as possible values either 0 or 1 then
-    the constraint has the follow behavior:
-    |---+---+------------+--------|
-    | p | q | Constraint | Holds? |
-    |---+---+------------+--------|
-    | 0 | 0 |          0 | Yes    |
-    | 1 | 0 |         -1 | Yes    |
-    | 0 | 1 |         -1 | Yes    |
-    | 1 | 1 |         -2 | No     |
-    |---+---+------------+--------|
-    where the values for columns $p$ and $q$ denote the existence or
-    inexistence of the package in the system.
+    the constraint will be satisfied unless both packages are installed.
 
     
