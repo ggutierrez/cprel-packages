@@ -78,11 +78,61 @@ void dependencies(CUDFVersionedPackage *pkg) {
 }
 
 void printUniverse(void) {
-  cout << "Packages in the universe" << endl;
+  // in the future this will offer a package traversal that will post
+  // the constraints.
   for (CUDFVersionedPackage *pkg : all_packages) {
     cout << pkg->name << "," << pkg->version << " rank: " << pkg->rank << endl;
     dependencies(pkg);
+    // conflicts(pkg);
   }
+}
+
+void install(void) {
+  if (the_problem->install == NULL) return;
+  for (CUDFVpkg *ipkgop : *(the_problem->install)) {
+    CUDFVirtualPackage *vpackage = ipkgop->virtual_package;
+    a_compptr comp = get_comparator(ipkgop->op);
+    bool has_pkg = false;
+    cout << "{";
+    // Install a package is install one version of it
+    if (vpackage->all_versions.size() > 0) 
+      for (CUDFVersionedPackage *ipkg : vpackage->all_versions) {
+        if (comp(ipkg->version, ipkgop->version)) {
+          has_pkg = true;
+          // add constraint
+          cout << ipkg->name << "," << ipkg->version << " ";
+        }
+      }
+    
+    // also we can install a provider for it
+    if (vpackage->providers.size() > 0) {
+      for (CUDFVersionedPackage *jpkg : vpackage->providers) {
+        has_pkg = true;
+        // add constraint
+        cout << jpkg->name << "," << jpkg->version << " ";
+      }
+    }
+
+    // or install one of the providers with the right version
+    for (auto& jpkg : vpackage->versioned_providers)
+      if (comp(jpkg.first,ipkgop->version))
+        for (CUDFVersionedPackage *kpkg : jpkg.second) {
+          // add constraint
+          has_pkg = true;
+          cout << kpkg->name << "," << kpkg->version << " ";
+        }    
+    cout << "}" << endl;
+    if (has_pkg) {
+      cout << "\tAdded constraint" << endl;
+    } else {
+      cout << "\tThere is no solution" << endl;
+    }
+  }
+}
+void handleRequest(void) {
+  // handling the request invloves taking into account the install,
+  // remove and upgrade statements.
+  install();
 }
 
 
@@ -148,6 +198,7 @@ int main(int argc, char* argv[]) {
   cout << "\t\tremove: " << the_problem->remove->size() << endl;
 
   //printVirtuals();
-  printUniverse();
+  //printUniverse();
+  handleRequest();
   return 0;
 }

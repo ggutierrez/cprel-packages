@@ -296,6 +296,7 @@
     installed the only way for the constraints representing the
     dependency is that at least one of the other packages gets
     installed.
+    
 *** Conflicts
     Suppose there are two packages $p$ and $q$ that conflict. The way
     to encode this as a constraint in a LP model is: $-1p -1q \geq
@@ -303,3 +304,34 @@
     the constraint will be satisfied unless both packages are installed.
 
     
+
+** User request
+   The user request completes the problem specification. This has
+   three different section where the user states which packages need
+   to be installed, removed or upgraded. All these parts are expressed
+   in terms of constraints in the model.
+*** Install
+    Handling the installation of a package is like handling a
+    constraint posted by the user. That is, the problem needs to
+    express all the possible ways to fullfill the installation
+    request.
+
+    If the package exists in the universe, then installing it means
+    installing one version (concrete package of it). If the package is
+    a virtual then one of its providers needs to be installed. If the
+    package presents a version constraint, then any of its providers
+    (with the right version) needs to be installed. The following
+    table presents an example of a constraint that can appear on the
+    installation request and the respective ways of satisfying it for
+    the /legacy/ problem.
+    |------------------+----------------------------|
+    | Inst. constraint | Possible solutions         |
+    |------------------+----------------------------|
+    | wheel            | (wheel,2) $\lor$ (wheel,3) |
+    | wheel = 2        | (wheel,2)                  |
+    | wheel > 2        | (wheel,3)                  |
+    | car              | (car,1)                    |
+    | huge-battery     | (battery,3)                |
+    |------------------+----------------------------|
+    Representing those installations in the model will add a /greater
+    or equal/ constraint to it with a right hand sie value of one.
