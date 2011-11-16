@@ -10,8 +10,8 @@ using namespace std;
  * The idea is that every method is called when the parser detects a
  * dependency or a conflict relation.
  */
- class Model { 
- private:
+class Model { 
+private:
   /// Number of dependencies
   int dependencies_;
   /// Number of conflicts
@@ -26,7 +26,7 @@ public:
     dependencies_++;
     // for now just print the dependency
     cout << p->name << "," << p->version << " depends on: "
-              << "\t\t{";
+         << "\t\t{";
     for (CUDFVersionedPackage *d : disj) {
       cout << d->name << "," << d->version << " ";
     }
@@ -37,6 +37,10 @@ public:
     conflicts_++;
     cout << p->name << "," << p->version << "\t\tconflicts with: " 
          << q->name << "," << q->version << endl;
+  }
+  /// Handle keep constraint \a kcst for package \a p with impact \a pkgs
+  void keep(CUDFKeepOp kcst, CUDFVersionedPackage *p, const std::vector<CUDFVersionedPackage*>& pkgs) {
+    
   }
 };
 
@@ -161,25 +165,64 @@ void conflicts(CUDFVersionedPackage *pkg, Model& model) {
 
 }
  
+void keep(CUDFVersionedPackage *pkg, std::vector<bool>& handled, Model& model) {
+  const CUDFVersionedPackage& ipkg = *pkg;
+  std::vector<CUDFVersionedPackage*> concerned;
+  switch(ipkg.keep) {
+  case keep_none: break;
+  case keep_feature: // Preserve all the provided features
+    if (ipkg.provides != NULL) {
+      for (CUDFVpkg *ipkgop : *(ipkg.provides) ) {
+        CUDFVirtualPackage *vpackage = ipkgop->virtual_package;
+        a_compptr comp = get_comparator(ipkgop->op);
+        if (vpackage->all_versions.size() > 0)
+          for (CUDFVersionedPackage *jpkg : vpackage->all_versions)
+            if (comp(jpkg->version, ipkgop->version)) {
+              concerned.push_back(jpkg);
+            }
+        if (vpackage->providers.size() > 0)
+          for (CUDFVersionedPackage *jpkg  : vpackage->providers)
+            concerned.push_back(jpkg);
+        for (auto& jpkg  : vpackage->versioned_providers)
+          if (comp(jpkg.first, ipkgop->version))
+            for (CUDFVersionedPackage *kpkg : jpkg.second)
+              concerned.push_back(kpkg);
+        model.keep(keep_feature,pkg,concerned);
+      }
+    }
+    break;
+  case keep_package: // Preserve at least one version of the package
+    if (ipkg.virtual_package->all_versions.size() > 0 &&
+        !handled.at(ipkg.virtual_package->rank+1))
+      {
+        CUDFVirtualPackage *vpackage = ipkg.virtual_package;
+        if (vpackage->all_versions.size() > 0)  // Should not make sense
+          for (CUDFVersionedPackage *jpkg : vpackage->all_versions)
+            concerned.push_back(jpkg);
+        model.keep(keep_package,pkg,concerned);
+        handled[ipkg.virtual_package->rank+1] = true;
+      }
+    break;
+  case keep_version: // Preserve the current version
+    concerned.push_back(pkg);
+    model.keep(keep_version,pkg,concerned);
+    break;
+  }
+}
+
 void universeConstraints(Model& model) {
+  std::vector<bool> handled(all_virtual_packages.size(), false);
   for (CUDFVersionedPackage *pkg : all_packages) {
-    //cout << pkg->name << "," << pkg->version << " rank: " << pkg->rank << endl;
+    // handle dependencies
     dependencies(pkg,model);
+    // handle conflicts
     conflicts(pkg,model);
+    // handle keep, only if is installed
+    if (pkg->installed)
+      keep(pkg,handled,model);
   }
   
 }
-/*
-void printUniverse(void) {
-  // in the future this will offer a package traversal that will post
-  // the constraints.
-  for (CUDFVersionedPackage *pkg : all_packages) {
-    cout << pkg->name << "," << pkg->version << " rank: " << pkg->rank << endl;
-    dependencies(pkg);
-    // conflicts(pkg);
-  }
-}
-*/
 
 void install(void) {
   if (the_problem->install == NULL) return;
