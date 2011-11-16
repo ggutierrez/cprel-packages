@@ -3,8 +3,45 @@
 
 using namespace std;
 
-/// Prints the dependencies of \a ipkg
-void dependencies(CUDFVersionedPackage *pkg) {
+/**
+ * \brief This class abstracts the notion of a model for solving an
+ * instance of the installability problem.
+ *
+ * The idea is that every method is called when the parser detects a
+ * dependency or a conflict relation.
+ */
+ class Model { 
+ private:
+  /// Number of dependencies
+  int dependencies_;
+  /// Number of conflicts
+  int conflicts_;
+public:
+  ///Empty constructor
+  Model(void) 
+    : dependencies_(0), conflicts_(0) {}
+  /// Add a dependency between package \a p on one of the packages in
+  /// \a disj
+  void depend(CUDFVersionedPackage *p, const std::vector<CUDFVersionedPackage*>& disj) {
+    dependencies_++;
+    // for now just print the dependency
+    cout << p->name << "," << p->version << " depends on: "
+              << "\t\t{";
+    for (CUDFVersionedPackage *d : disj) {
+      cout << d->name << "," << d->version << " ";
+    }
+    cout << "}" << endl;
+  }
+  /// Add a conflict between package \a p and package \a q
+  void conflict(CUDFVersionedPackage *p, CUDFVersionedPackage *q) {
+    conflicts_++;
+    cout << p->name << "," << p->version << "\t\tconflicts with: " 
+         << q->name << "," << q->version << endl;
+  }
+};
+
+/// Iterpretes the dependencies for package \a pkg and add them to \a model
+void dependencies(CUDFVersionedPackage *pkg, Model& model) {
   const CUDFVersionedPackage& ipkg = *pkg;
   if (ipkg.depends == NULL) {
     return;
@@ -14,13 +51,16 @@ void dependencies(CUDFVersionedPackage *pkg) {
     // every _anddep_ is a conjuntion of disjuntions. We will traverse
     // now the disjunctions.
     
+    // prepare storage for call the model
+    std::vector<CUDFVersionedPackage*> disj;
+      
     // store if there is a self-dependency
     bool self_depend = false;
     for (const CUDFVpkg *ordep : *anddep) {
       const CUDFVirtualPackage& vpackage = *(ordep->virtual_package);
       a_compptr comp = get_comparator(ordep->op);
 
-      cout << "\t\t" << vpackage.name << " {";
+      //cout << "\t\t" << vpackage.name << " {";
       // is there a concrete package that provides it?
       if (vpackage.all_versions.size() > 0) {
         for (CUDFVersionedPackage *jpkg : vpackage.all_versions)
@@ -32,7 +72,8 @@ void dependencies(CUDFVersionedPackage *pkg) {
             } else {
               // add constraint
               has_coeff = true;
-              cout << jpkg->name << "," << jpkg->version << " ";
+              //cout << jpkg->name << "," << jpkg->version << " ";
+              disj.push_back(jpkg);
             }
           } 
       }
@@ -46,9 +87,10 @@ void dependencies(CUDFVersionedPackage *pkg) {
             break;
           } else {
             has_coeff = true;
-            cout << jpkg->name << "," << jpkg->version << " ";
-          } 
-      }
+            //cout << jpkg->name << "," << jpkg->version << " ";
+            disj.push_back(jpkg);
+          }
+       }
 
       // is there a versioned provider?
       if (!self_depend) {
@@ -63,20 +105,71 @@ void dependencies(CUDFVersionedPackage *pkg) {
               } else {
                 has_coeff = true;
                 // add constraint
-                cout << kpkg->name << "," << kpkg->version << " ";
+                //cout << kpkg->name << "," << kpkg->version << " ";
+                disj.push_back(kpkg);
               }
       }
-      cout << "}" << endl;
+      //cout << "}" << endl;
     }
     if (has_coeff) {
-      cout << "\t\tA constraint was posted" << endl;
+      //cout << "\t\tA constraint was posted" << endl;
+      model.depend(pkg,disj);
     } else if (!self_depend) {
       cout << "\t\tNo coeff and no self depend " << ipkg.name << "," << ipkg.version << endl;
     }
-    cout << endl;
+    //cout << endl;
   }
 }
 
+void conflicts(CUDFVersionedPackage *pkg, Model& model) {
+  const CUDFVersionedPackage& ipkg = *pkg;
+  if (ipkg.conflicts == NULL) {
+    return;
+  }
+  
+  for (CUDFVpkg *ipkgop : *(ipkg.conflicts)) {
+    const CUDFVirtualPackage& vpackage = *(ipkgop->virtual_package);
+    a_compptr comp = get_comparator(ipkgop->op);
+    
+    if (vpackage.all_versions.size() > 0) {
+      // it conflicts with the right versions of the package
+      for(CUDFVersionedPackage *jpkg : vpackage.all_versions) {
+        if (jpkg != pkg && comp(jpkg->version, ipkgop->version)) {
+          model.conflict(pkg, jpkg);
+        }
+      }
+    }
+
+    // as well as with all the providers
+    if (vpackage.providers.size() > 0) {
+      for(CUDFVersionedPackage *jpkg : vpackage.all_versions) {
+        if (jpkg != pkg) {
+          model.conflict(pkg,jpkg);
+        }
+      }
+    }
+
+    // as well as with all the versioned providers with the right
+    // version
+    for (auto& jpkg : vpackage.versioned_providers)
+      if (comp(jpkg.first, ipkgop->version))
+        for (CUDFVersionedPackage *kpkg : jpkg.second)
+          if (kpkg != pkg) 
+            model.conflict(pkg,kpkg);
+    
+  }
+
+}
+ 
+void universeConstraints(Model& model) {
+  for (CUDFVersionedPackage *pkg : all_packages) {
+    //cout << pkg->name << "," << pkg->version << " rank: " << pkg->rank << endl;
+    dependencies(pkg,model);
+    conflicts(pkg,model);
+  }
+  
+}
+/*
 void printUniverse(void) {
   // in the future this will offer a package traversal that will post
   // the constraints.
@@ -86,6 +179,7 @@ void printUniverse(void) {
     // conflicts(pkg);
   }
 }
+*/
 
 void install(void) {
   if (the_problem->install == NULL) return;
@@ -135,7 +229,7 @@ void handleRequest(void) {
   install();
 }
 
-
+/*
 void printVirtuals(void) {
   for (CUDFVirtualPackage *vp : all_virtual_packages) {
     cout << "Package: " << vp->name << endl;
@@ -163,7 +257,7 @@ void printVirtuals(void) {
     }
   }
 }
-
+*/
 int main(int argc, char* argv[]) {
   if (argc != 2) {
     cerr << "Error, no input provided" << endl;
@@ -197,8 +291,10 @@ int main(int argc, char* argv[]) {
   if (the_problem->remove != NULL)
   cout << "\t\tremove: " << the_problem->remove->size() << endl;
 
+  Model m;
+  universeConstraints(m);
   //printVirtuals();
   //printUniverse();
-  handleRequest();
+  //handleRequest();
   return 0;
 }
