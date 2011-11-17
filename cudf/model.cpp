@@ -11,12 +11,18 @@ namespace CUDFTools {
   /// Iterpretes the dependencies for package \a pkg and add them to \a model
   void dependencies(CUDFVersionedPackage *pkg, Model& model);
   
+  /// Interpretes the conflicts for package \a pkg and add them to \a model
   void conflicts(CUDFVersionedPackage *pkg, Model& model);
-
+  
+  /// Interpretes the keep constraints for \a pkg and add them to \a model
   void keep(CUDFVersionedPackage *pkg, std::vector<bool>& handled, Model& model);
 
+  /// Interpretes the constraints available from the universe and add them to \a model
   void universeConstraints(Model& model);
   
+  /// Interpretes the request present in the parsed file and add it to \a model
+  void handleRequest(Model& model);
+
   Model::Model(void) 
     : dependencies_(0), conflicts_(0) {}
   
@@ -41,6 +47,8 @@ namespace CUDFTools {
     
     // handle the constraints present in the universe
     universeConstraints(*this);
+    // handle the request
+    handleRequest(*this);
   }
 
   void Model::depend(CUDFVersionedPackage *p, const std::vector<CUDFVersionedPackage*>& disj) {
@@ -62,6 +70,10 @@ namespace CUDFTools {
 
   void Model::keep(int kcst, CUDFVersionedPackage *p, const std::vector<CUDFVersionedPackage*>& pkgs) {
     
+  }
+  
+  void Model::install(const std::vector<CUDFVersionedPackage*>& disj) {
+    cout << "Processed package <install> constraint" << endl;
   }
 
   // implementation of private functions to interpret the problem input
@@ -231,18 +243,64 @@ namespace CUDFTools {
     }
   }
 
-void universeConstraints(Model& model) {
-  std::vector<bool> handled(all_virtual_packages.size(), false);
-  for (CUDFVersionedPackage *pkg : all_packages) {
-    // handle dependencies
-    dependencies(pkg,model);
-    // handle conflicts
-    conflicts(pkg,model);
-    // handle keep, only if is installed
-    if (pkg->installed)
-      keep(pkg,handled,model);
+  void universeConstraints(Model& model) {
+    std::vector<bool> handled(all_virtual_packages.size(), false);
+    for (CUDFVersionedPackage *pkg : all_packages) {
+      // handle dependencies
+      dependencies(pkg,model);
+      // handle conflicts
+      conflicts(pkg,model);
+      // handle keep, only if is installed
+      if (pkg->installed)
+        keep(pkg,handled,model);
+    }
   }
-  
-}
-  
+
+  /// Process the install query represented by \a pkgop
+  void install(CUDFVpkg *pkgop, Model& model) {
+    CUDFVirtualPackage *vpackage = pkgop->virtual_package;
+    a_compptr comp  = get_comparator(pkgop->op);
+    bool has_pkg = false;
+    
+    // storage for the concerned packages
+    std::vector<CUDFVersionedPackage*> concerned;
+    if (vpackage->all_versions.size() > 0) // Install P = install one version of P
+      for (CUDFVersionedPackage *ipkg : vpackage->all_versions)
+        if (comp(ipkg->version, pkgop->version)) {
+          has_pkg = true;
+          concerned.push_back(ipkg);
+        }
+    if (vpackage->providers.size() > 0) // or install one of the providers of P
+      for (CUDFVersionedPackage *jpkg : vpackage->providers) {
+        has_pkg = true;
+        concerned.push_back(jpkg);
+      }
+    // or install one of the providers with the right version
+    for (auto&  jpkg : vpackage->versioned_providers)
+      if (comp(jpkg.first, pkgop->version))
+        for (CUDFVersionedPackage *kpkg : jpkg.second) {
+          has_pkg = true;
+          concerned.push_back(kpkg);
+        }
+    if (has_pkg)
+      model.install(concerned);
+    else {
+      cerr << "Error: cannot install package" << endl;
+      exit(1); // Cannot install this pkg
+    }
+ }
+
+  /// Process the remove query represented by \a pkgop
+  void remove(CUDFVpkg *pkgop, Model& model) {
+    cout << "Processed package <remove> constraint" << endl;
+  }
+
+  void handleRequest(Model& model) {
+    if (the_problem->install != NULL)
+      for (CUDFVpkg *ipkgop : *(the_problem->install))
+        install(ipkgop, model);
+    if (the_problem->remove != NULL)
+      for (CUDFVpkg *ipkgop : *(the_problem->remove))
+        remove(ipkgop, model);
+  }
 }

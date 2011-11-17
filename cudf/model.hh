@@ -33,6 +33,8 @@ namespace CUDFTools {
     void conflict(CUDFVersionedPackage *p, CUDFVersionedPackage *q);
     /// Handle keep constraint \a kcst for package \a p with impact \a pkgs
     void keep(int kcst, CUDFVersionedPackage *p, const std::vector<CUDFVersionedPackage*>& pkgs);
+    /// Handle the installation of one of the packages in \a disj
+    void install(const std::vector<CUDFVersionedPackage*>& disj);
   };
 }
 #endif
