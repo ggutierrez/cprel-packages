@@ -40,6 +40,8 @@ namespace CUDFTools {
     const std::vector<CUDFVersionedPackage*>& installedPackages(void) const;
     /// Returns the uninstalled packages that were parsed
     const std::vector<CUDFVersionedPackage*>& uninstalledPackages(void) const;
+    /// Returns the packages that were parsed
+    const std::vector<CUDFVersionedPackage*>& packages(void) const;
     /*
       In orther to avoid the inclusion of cudf.hh by other files, I am
       providing these methods for packages here. The rationale behind
@@ -57,7 +59,11 @@ namespace CUDFTools {
      * during parsing.
      */
     int rank(const CUDFVersionedPackage *pkg) const;
-
+    /**
+     * \brief Returns the number of packages with other versions of \a pkg.
+     *
+     */
+    int countVersions(const CUDFVersionedPackage *pkg) const;
   };
 }
 #endif

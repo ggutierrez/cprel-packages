@@ -103,6 +103,17 @@ BISON_TARGET(cudfparser ${CMAKE_SOURCE_DIR}/cudf/cudf.y
   ${CMAKE_CURRENT_BINARY_DIR}/cudflexer.cpp COMPILE_FLAGS " --prefix=cudf")
  ADD_FLEX_BISON_DEPENDENCY(cudflexer cudfparser)
 ##########################################################################
+# Find glpk
+##########################################################################
+find_library(GLPK_LIB glpk)
+find_path(GLPK_HDR glpk.h)
+if(GLPK_LIB AND GLPK_HDR)
+  message(STATUS "Using glpk from: ${GLPK_LIB}")
+else()
+  message(FATAL_ERROR "glpk is needed to build this project")
+endif()
+include_directories(${GLPK_HDR})
+##########################################################################
 # This project products
 ##########################################################################
 include_directories(${CMAKE_SOURCE_DIR})
@@ -116,7 +127,7 @@ add_library(unsaparser
 
 ## Paranoid solver
 add_executable(lp-paranoid solver-lp-paranoid/paranoid.cpp)
-target_link_libraries(lp-paranoid unsaparser)
+target_link_libraries(lp-paranoid unsaparser ${GLPK_LIB})
 
 add_executable(statistics tools/stats.cpp)
 target_link_libraries(statistics ${CUDF_LIB} ${KCUDF_LIB} ${CPREL_LIBRARIES} ${Boost_LIBRARIES})

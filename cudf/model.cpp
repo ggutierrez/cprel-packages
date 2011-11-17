@@ -68,12 +68,20 @@ namespace CUDFTools {
     return uninstalled_packages;
   }
 
+  const std::vector<CUDFVersionedPackage*>& Model::packages(void) const {
+    return all_packages;
+  }
+
   const char* Model::name(const CUDFVersionedPackage *pkg) const {
     return pkg->name;
   }
 
   unsigned long long  Model::version(const CUDFVersionedPackage *pkg) const {
     return pkg->version;
+  }
+
+  int Model::countVersions(const CUDFVersionedPackage *pkg) const {
+    return pkg->virtual_package->all_versions.size();
   }
 
   int Model::rank(const CUDFVersionedPackage *pkg) const {
