@@ -109,6 +109,7 @@ include_directories(${CMAKE_SOURCE_DIR})
 
 message(STATUS "Parser output files: ${BISON_cudfparser_OUTPUTS}")
 add_library(unsaparser 
+  cudf/model.cpp
   cudf/cudf_tools.cpp
   cudf/cudf_hash_table.cpp
   ${BISON_cudfparser_OUTPUTS}
