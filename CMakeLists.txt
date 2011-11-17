@@ -107,13 +107,16 @@ BISON_TARGET(cudfparser ${CMAKE_SOURCE_DIR}/cudf/cudf.y
 ##########################################################################
 include_directories(${CMAKE_SOURCE_DIR})
 
-message(STATUS "Parser output files: ${BISON_cudfparser_OUTPUTS}")
 add_library(unsaparser 
   cudf/model.cpp
   cudf/cudf_tools.cpp
   cudf/cudf_hash_table.cpp
   ${BISON_cudfparser_OUTPUTS}
   ${FLEX_cudflexer_OUTPUTS})
+
+## Paranoid solver
+add_executable(lp-paranoid solver-lp-paranoid/paranoid.cpp)
+target_link_libraries(lp-paranoid unsaparser)
 
 add_executable(statistics tools/stats.cpp)
 target_link_libraries(statistics ${CUDF_LIB} ${KCUDF_LIB} ${CPREL_LIBRARIES} ${Boost_LIBRARIES})

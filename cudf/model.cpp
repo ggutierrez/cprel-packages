@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cassert>
 #include <cudf/model.hh>
 #include <cudf/cudf.hh>
 
@@ -23,11 +24,9 @@ namespace CUDFTools {
   /// Interpretes the request present in the parsed file and add it to \a model
   void handleRequest(Model& model);
 
-  Model::Model(void) 
-    : dependencies_(0), conflicts_(0) {}
+  Model::Model(void)  {}
   
-  Model::Model(const char* fname) 
-    : dependencies_(0), conflicts_(0) {
+  Model::Model(const char* fname) {
     // parse the file with unsa parser
     FILE *input = fopen(fname,"r");
     if (input == NULL) {
@@ -46,36 +45,40 @@ namespace CUDFTools {
     fclose(input);
     
     // handle the constraints present in the universe
-    universeConstraints(*this);
+    //universeConstraints(*this);
     // handle the request
+    //handleRequest(*this);
+  }
+
+  Model::~Model(void) {}
+
+  void Model::loadUniverse(void) {
+    universeConstraints(*this);
+  }
+
+  void Model::interpretRequest(void) {
     handleRequest(*this);
   }
 
-  void Model::depend(CUDFVersionedPackage *p, const std::vector<CUDFVersionedPackage*>& disj) {
-    dependencies_++;
-    // for now just print the dependency
-    cout << p->name << "," << p->version << " depends on: "
-         << "\t\t{";
-    for (CUDFVersionedPackage *d : disj) {
-      cout << d->name << "," << d->version << " ";
-    }
-    cout << "}" << endl;
-  }
-  
-  void Model::conflict(CUDFVersionedPackage *p, CUDFVersionedPackage *q) {
-    conflicts_++;
-    cout << p->name << "," << p->version << "\t\tconflicts with: " 
-         << q->name << "," << q->version << endl;
+  const std::vector<CUDFVersionedPackage*>& Model::installedPackages(void) const {
+    return installed_packages;
   }
 
-  void Model::keep(int kcst, CUDFVersionedPackage *p, const std::vector<CUDFVersionedPackage*>& pkgs) {
-    
-  }
-  
-  void Model::install(const std::vector<CUDFVersionedPackage*>& disj) {
-    cout << "Processed package <install> constraint" << endl;
+  const std::vector<CUDFVersionedPackage*>& Model::uninstalledPackages(void) const {
+    return uninstalled_packages;
   }
 
+  const char* Model::name(const CUDFVersionedPackage *pkg) const {
+    return pkg->name;
+  }
+
+  unsigned long long  Model::version(const CUDFVersionedPackage *pkg) const {
+    return pkg->version;
+  }
+
+  int Model::rank(const CUDFVersionedPackage *pkg) const {
+    return pkg->rank;
+  }
   // implementation of private functions to interpret the problem input
 
   void dependencies(CUDFVersionedPackage *pkg, Model& model) {
@@ -152,7 +155,7 @@ namespace CUDFTools {
         //cout << "\t\tA constraint was posted" << endl;
         model.depend(pkg,disj);
       } else if (!self_depend) {
-        cout << "\t\tNo coeff and no self depend " << ipkg.name << "," << ipkg.version << endl;
+        //cout << "\t\tNo coeff and no self depend " << ipkg.name << "," << ipkg.version << endl;
       }
       //cout << endl;
     }
@@ -291,7 +294,8 @@ namespace CUDFTools {
  }
 
   /// Process the remove query represented by \a pkgop
-  void remove(CUDFVpkg *pkgop, Model& model) {
+  void remove(CUDFVpkg *, Model&) {
+    assert("not implemented" && false);
     cout << "Processed package <remove> constraint" << endl;
   }
 
