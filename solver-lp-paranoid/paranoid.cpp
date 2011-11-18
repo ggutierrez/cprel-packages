@@ -143,12 +143,34 @@ public:
     return glp_mip_col_val(lp_, rank(p) + 1);
   }
   /// Outputs the solution to \a os
-  void printSolution(std::ostream& os) {
+  void printStats(std::ostream& os) {
+    int installed = 0, newInstalled = 0, removed = 0;
     for (CUDFVersionedPackage *p : packages()) {
-      double s = getStatus(p);
-      if (s > 0.7)
-        os << versionedName(p) << ": " << getStatus(p) << endl;
+      if (getStatus(p) > 0.7) {
+        installed++;
+        if (!foundInstalled(p))
+          newInstalled++;
+      } else {
+        if (foundInstalled(p))
+          removed++;
+      }
     }
+    
+    os << "Statistics: " << endl
+       << "\tInstalled: " << installed << endl
+       << "\tNew installed: " << newInstalled << endl
+       << "\tRemoved: " << removed << endl;
+      
+  }
+
+  /// Outputs the solution to \a os in CUDF format
+  void printSolutionCUDF(std::ostream& os) {
+    for (CUDFVersionedPackage *p : packages())
+      if (getStatus(p) > 0.7) {
+        os << "package: " << name(p) << endl
+           << "version: " << version(p) << endl
+           << "installed: true" << endl << endl;
+      } 
   }
 };
 
@@ -161,7 +183,8 @@ int main(int argc, char *argv[]) {
   Paranoid model(argv[1]);
   if (model.solve()) {
     cout << "Solution was found" << endl;
-    model.printSolution(cout);
+    model.printStats(cout);
+    model.printSolutionCUDF(cout);
   } else {
     cout << "Problem is unsatisfiable" << endl;
   }

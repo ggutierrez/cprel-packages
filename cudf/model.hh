@@ -66,6 +66,11 @@ namespace CUDFTools {
      *
      */
     int countVersions(const CUDFVersionedPackage *pkg) const;
+    /**
+     * \brief Returns if package \a pkg appears as installed in the input
+     *
+     */
+    bool foundInstalled(const CUDFVersionedPackage *pkg) const;
   };
 }
 #endif

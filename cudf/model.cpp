@@ -91,6 +91,11 @@ namespace CUDFTools {
   int Model::rank(const CUDFVersionedPackage *pkg) const {
     return pkg->rank;
   }
+
+  bool Model::foundInstalled(const CUDFVersionedPackage *pkg) const {
+    return pkg->installed;
+  }
+
   // implementation of private functions to interpret the problem input
 
   void dependencies(CUDFVersionedPackage *pkg, Model& model) {
