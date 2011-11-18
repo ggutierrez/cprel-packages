@@ -103,7 +103,16 @@ public:
   }
   /// Add a conflict between package \a p and package \a q
   virtual void conflict(CUDFVersionedPackage *p, CUDFVersionedPackage *q) {
+    coeff_rank_ = 1;
+    setCoeff(p,-1);
+    setCoeff(q,-1);
     
+    // add the constraint
+    if (coeff_rank_ > 1) {
+      int irow = glp_add_rows(lp_,1);
+      glp_set_row_bnds(lp_, irow, GLP_LO, -1, 0);
+      glp_set_mat_row(lp_, irow, coeff_rank_-1, &index_[0], &coefficient_[0]);
+    }
   }
   /// Handle keep constraint \a kcst for package \a p with impact \a pkgs
   virtual void keep(int kcst, CUDFVersionedPackage *p, const std::vector<CUDFVersionedPackage*>& pkgs) {
@@ -125,13 +134,14 @@ public:
     glp_iocp mip_params;
     
     glp_init_iocp(&mip_params);
+    mip_params.binarize = GLP_ON;
     mip_params.gmi_cuts = GLP_ON;
     mip_params.mir_cuts = GLP_ON;
     mip_params.cov_cuts = GLP_ON;
     mip_params.clq_cuts = GLP_ON;
     mip_params.presolve = GLP_ON;
-    mip_params.binarize = GLP_ON;
-
+   
+   
     glp_cpx_basis(lp_);
 
     int status = glp_intopt(lp_, &mip_params);
@@ -184,7 +194,7 @@ int main(int argc, char *argv[]) {
   if (model.solve()) {
     cout << "Solution was found" << endl;
     model.printStats(cout);
-    model.printSolutionCUDF(cout);
+    //model.printSolutionCUDF(cout);
   } else {
     cout << "Problem is unsatisfiable" << endl;
   }
