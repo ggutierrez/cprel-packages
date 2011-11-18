@@ -18,6 +18,12 @@ private:
   /// Index array for every constraint
   std::vector<int> index_;
   int coeff_rank_;
+  
+  enum LP_REL {
+    LP_REL_GEQ, // inequality >=
+    LP_REL_LEQ, // inequality <=
+    LP_REL_EQ   // Equation
+  };
 public:
   // Objects of this class are non-copyable
   Paranoid() = delete;
@@ -81,6 +87,27 @@ public:
     coefficient_[coeff_rank_] = value;
     index_[coeff_rank_] = rank(p) + 1;
     coeff_rank_++;
+  }  
+  /**
+   * \brief Adds a constraint to the model with relation \a r and \a rhs.
+   *
+   */
+  void addConstraint(LP_REL r, double rhs) {
+    if (coeff_rank_ > 1) {
+      int irow = glp_add_rows(lp_,1);
+      switch (r) {
+      case LP_REL_GEQ:
+        glp_set_row_bnds(lp_, irow, GLP_LO, rhs, 0);
+        break;
+      case LP_REL_LEQ:
+        glp_set_row_bnds(lp_, irow, GLP_UP, 0, rhs);
+        break;
+      case LP_REL_EQ:
+        glp_set_row_bnds(lp_, irow, GLP_FX, rhs, rhs);
+        break;
+      }  
+      glp_set_mat_row(lp_, irow, coeff_rank_ - 1, &index_[0], &coefficient_[0]);
+    }
   }
   /// Add a dependency between package \a p on one of the packages in
   /// \a disj
@@ -91,13 +118,9 @@ public:
       if (getCoeff(d) == 0) 
         setCoeff(d,1);
     setCoeff(p,-1);
-    
+
     // add the constraint
-    if (coeff_rank_ > 1) {
-      int irow = glp_add_rows(lp_,1);
-      glp_set_row_bnds(lp_, irow, GLP_LO, -1, 0);
-      glp_set_mat_row(lp_, irow, coeff_rank_ - 1, &index_[0], &coefficient_[0]);
-    }
+    addConstraint(LP_REL_GEQ, 0);
     // restore the rank
     coeff_rank_ = 1;
   }
@@ -108,19 +131,25 @@ public:
     setCoeff(q,-1);
     
     // add the constraint
-    if (coeff_rank_ > 1) {
-      int irow = glp_add_rows(lp_,1);
-      glp_set_row_bnds(lp_, irow, GLP_LO, -1, 0);
-      glp_set_mat_row(lp_, irow, coeff_rank_-1, &index_[0], &coefficient_[0]);
-    }
+    addConstraint(LP_REL_GEQ,-1);
+    // restore the rank
+    coeff_rank_ = 1;
   }
   /// Handle keep constraint \a kcst for package \a p with impact \a pkgs
   virtual void keep(int kcst, CUDFVersionedPackage *p, const std::vector<CUDFVersionedPackage*>& pkgs) {
-
+    
   }
   /// Handle the installation of one of the packages in \a disj
   virtual void install(const std::vector<CUDFVersionedPackage*>& disj) {
+    coeff_rank_ = 1;
+    for (CUDFVersionedPackage *d : disj) 
+      if (getCoeff(d) == 0) 
+        setCoeff(d,1);
     
+    // add the constraint
+    addConstraint(LP_REL_GEQ, 1);    
+    // restore the rank
+    coeff_rank_ = 1;
   }
   /**
    * \brief Solve the actual problem.
