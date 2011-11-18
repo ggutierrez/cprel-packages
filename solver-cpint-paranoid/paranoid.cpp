@@ -9,12 +9,16 @@ using Gecode::Space;
 
 class ParanoidSolver : public Gecode::Space {
 private:
+  // packages in the system
   Gecode::IntVarArray packages_;
+  // optimization value
+  Gecode::IntVar opt_;
 public:
   /// Constructor
   ParanoidSolver(int packages)
-    : packages_(*this,packages,0,1) {
-  }
+    : packages_(*this,packages,0,1)
+    , opt_(*this,Gecode::Int::Limits::min,Gecode::Int::Limits::max)
+  {}
   /// Copy constructor
   ParanoidSolver(bool share, ParanoidSolver& other) {
     packages_.update(*this,share,other.packages_);
@@ -56,6 +60,9 @@ public:
     }
     Gecode::linear(*this,x,Gecode::IRT_GQ,1);
   }
+  void setOptimize(const std::vector<int>& coeffs) {
+    
+  }
 };
 
 class CUDFVersionedPackage;
@@ -75,7 +82,7 @@ public:
   {    
     // The constructor of the superclass will read everything in cudf,
     // making the number of packages available.
-    solver_ = new ParanoidSolver(packages().size()+1);
+    solver_ = new ParanoidSolver(packages().size());
     
     // The call to these methods will make the interpretation of the
     // constraints. This will indirectly make the methods that we
@@ -87,18 +94,32 @@ public:
   }
   /// Destructor
   virtual ~Paranoid(void) {}
+  void objective(void) {
+    std::vector<int> coeffs(packages().size());
+
+    // try to keep packages that are uninstalled already uninstalled
+    for (CUDFVersionedPackage *p : uninstalledPackages())
+      coeffs[rank(p)] = 1;
+    
+    for (CUDFVersionedPackage *p : installedPackages())
+      coeffs[rank(p)] =  -(countVersions(p) == 1 ? 
+                           (packages().size()) : 
+                           1);
+    solver_->setOptimize(coeffs);
+  }
+
   /// Add a dependency between package \a p on one of the packages in
   /// \a disj
   virtual void depend(CUDFVersionedPackage *p, const std::vector<CUDFVersionedPackage*>& disj) {
     std::vector<int> a;
     a.reserve(disj.size());
     for (CUDFVersionedPackage *d : disj)
-      a.push_back(rank(d) + 1);
-    solver_->depend(rank(p)+1, a);
+      a.push_back(rank(d));
+    solver_->depend(rank(p), a);
   }
   /// Add a conflict between package \a p and package \a q
   virtual void conflict(CUDFVersionedPackage *p, CUDFVersionedPackage *q) {
-    solver_->conflict(rank(p)+1, rank(q)+1);
+    solver_->conflict(rank(p), rank(q));
   }
   /// Handle keep constraint \a kcst for package \a p with impact \a pkgs
   virtual void keep(int kcst, CUDFVersionedPackage *p, const std::vector<CUDFVersionedPackage*>& pkgs) {
@@ -109,7 +130,7 @@ public:
     std::vector<int> d;
     d.reserve(disj.size());
     for (CUDFVersionedPackage *p : disj)
-      d.push_back(rank(p) + 1);
+      d.push_back(rank(p));
     
     solver_->install(d);
   }
