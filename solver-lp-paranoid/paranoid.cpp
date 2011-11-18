@@ -65,7 +65,7 @@ public:
     for (CUDFVersionedPackage *p : packages()) {
       int i = rank(p) + 1;
       glp_set_col_bnds(lp_, i, GLP_DB, 0, 1); // set bounds to [0, 1]
-      //glp_set_col_name(lp_, i,  )
+      glp_set_col_name(lp_, i, versionedName(p));
       glp_set_col_kind(lp_, i, GLP_BV);
     }
   }
@@ -111,11 +111,44 @@ public:
   }
   /// Handle the installation of one of the packages in \a disj
   virtual void install(const std::vector<CUDFVersionedPackage*>& disj) {
-
+    
   }
-  /// Solve the actual problem
-  void solve(void) {
-    glp_write_lp(lp_, NULL, "glpk.lp");
+  /**
+   * \brief Solve the actual problem.
+   *
+   * Returns \a true if a solution was found, \a false otherwise.
+   */
+  bool solve(void) {
+    //glp_write_lp(lp_, NULL, "glpk.lp");
+    
+    //  glp_smcp simplex_params;
+    glp_iocp mip_params;
+    
+    glp_init_iocp(&mip_params);
+    mip_params.gmi_cuts = GLP_ON;
+    mip_params.mir_cuts = GLP_ON;
+    mip_params.cov_cuts = GLP_ON;
+    mip_params.clq_cuts = GLP_ON;
+    mip_params.presolve = GLP_ON;
+    mip_params.binarize = GLP_ON;
+
+    glp_cpx_basis(lp_);
+
+    int status = glp_intopt(lp_, &mip_params);
+    return status == 0 ? true : false;
+  }
+  
+  /// Retrieve the status of package \a p after the solving process 
+  double getStatus(CUDFVersionedPackage *p) const {
+    return glp_mip_col_val(lp_, rank(p) + 1);
+  }
+  /// Outputs the solution to \a os
+  void printSolution(std::ostream& os) {
+    for (CUDFVersionedPackage *p : packages()) {
+      double s = getStatus(p);
+      if (s > 0.7)
+        os << versionedName(p) << ": " << getStatus(p) << endl;
+    }
   }
 };
 
@@ -126,7 +159,12 @@ int main(int argc, char *argv[]) {
   }
 
   Paranoid model(argv[1]);
-  model.solve();
-  cout << "Constructed model" << endl;
+  if (model.solve()) {
+    cout << "Solution was found" << endl;
+    model.printSolution(cout);
+  } else {
+    cout << "Problem is unsatisfiable" << endl;
+  }
+  
   return 0;
 }

@@ -76,6 +76,10 @@ namespace CUDFTools {
     return pkg->name;
   }
 
+  const char* Model::versionedName(const CUDFVersionedPackage *pkg) const {
+    return pkg->versioned_name;
+  }
+  
   unsigned long long  Model::version(const CUDFVersionedPackage *pkg) const {
     return pkg->version;
   }

@@ -50,6 +50,8 @@ namespace CUDFTools {
      */
     /// Returns the package name of \a pkg
     const char* name(const CUDFVersionedPackage *pkg) const;
+    /// Returns the package name of \a pkg
+    const char* versionedName(const CUDFVersionedPackage *pkg) const;
     /// Returns the package version of \a pkg
     unsigned long long version(const CUDFVersionedPackage *pkg) const;
     /**
