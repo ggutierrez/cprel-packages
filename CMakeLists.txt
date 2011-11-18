@@ -129,23 +129,26 @@ add_library(unsaparser
 add_executable(lp-paranoid solver-lp-paranoid/paranoid.cpp)
 target_link_libraries(lp-paranoid unsaparser ${GLPK_LIB})
 
-add_executable(statistics tools/stats.cpp)
-target_link_libraries(statistics ${CUDF_LIB} ${KCUDF_LIB} ${CPREL_LIBRARIES} ${Boost_LIBRARIES})
+add_executable(cpint-paranoid solver-cpint-paranoid/paranoid.cpp)
+target_link_libraries(cpint-paranoid unsaparser ${GECODE_LIBRARIES})
 
-add_library(cprelsolver 
-  solver/solver.cpp
-  solver/prop/dependencies.cpp
-  solver/prop/provides.cpp
-  solver/prop/conflicts.cpp
-  solver/branch/stableProvides.cpp
-)
+#add_executable(statistics tools/stats.cpp)
+#target_link_libraries(statistics ${CUDF_LIB} ${KCUDF_LIB} ${CPREL_LIBRARIES} ${Boost_LIBRARIES})
 
-add_executable(solver tools/solver.cpp)
-target_link_libraries(solver cprelsolver 
-  ${CUDF_LIB} ${KCUDF_LIB} 
-  ${CPREL_LIBRARIES} 
-  ${Boost_LIBRARIES} 
-  ${GECODE_LIBRARIES})
+#add_library(cprelsolver 
+#  solver/solver.cpp
+#  solver/prop/dependencies.cpp
+#  solver/prop/provides.cpp
+#  solver/prop/conflicts.cpp
+#  solver/branch/stableProvides.cpp
+#)
 
-add_executable(cudfstats tools/cudfstats.cpp)
-target_link_libraries(cudfstats unsaparser)
+#add_executable(solver tools/solver.cpp)
+#target_link_libraries(solver cprelsolver 
+#  ${CUDF_LIB} ${KCUDF_LIB} 
+#  ${CPREL_LIBRARIES} 
+#  ${Boost_LIBRARIES} 
+#  ${GECODE_LIBRARIES})
+
+#add_executable(cudfstats tools/cudfstats.cpp)
+#target_link_libraries(cudfstats unsaparser)
