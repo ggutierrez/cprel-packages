@@ -13,24 +13,31 @@ private:
   // packages in the system
   Gecode::IntVarArray packages_;
   // optimization value
-  //Gecode::IntVar opt_;
+  Gecode::IntVar opt_;
 public:
   /// Constructor
   ParanoidSolver(int packages)
     : packages_(*this,packages,0,1)
-      //, opt_(*this,Gecode::Int::Limits::min,Gecode::Int::Limits::max)
+    , opt_(*this,Gecode::Int::Limits::min,Gecode::Int::Limits::max)
   {}
   /// Copy constructor
   ParanoidSolver(bool share, ParanoidSolver& other)
     : Gecode::Space(share,other) {
     packages_.update(*this,share,other.packages_);
+    opt_.update(*this,share,other.opt_);
   }
   /// Copy
   Gecode::Space* copy(bool share) {
     return new ParanoidSolver(share,*this);
   }
+  /// Optimization
+  virtual void constrain(const Gecode::Space& sol_) {
+    const ParanoidSolver& sol = static_cast<const ParanoidSolver&>(sol_);
+    // Maximization
+    Gecode::rel(*this,opt_,Gecode::IRT_GR,sol.opt_);
+  }
   void print(std::ostream& os) const {
-    os << "something" << endl;
+    os << "Optimization " << opt_ << endl;
   }
   /// Post a constraint stating that p depends on any in disj
   void depend(int p, const std::vector<int>& disj) {
@@ -65,8 +72,13 @@ public:
     }
     Gecode::linear(*this,x,Gecode::IRT_GQ,1);
   }
-  void setOptimize(const std::vector<int>&) {
-    
+  void setOptimize(/* const std::vector<int>& */) {
+    Gecode::linear(*this,packages_,Gecode::IRT_EQ,opt_);
+  }
+  /// Returns the status (true: installed, false otherwise) of a package in the solver
+  bool packageInstalled(int p) const {
+    if (!packages_[p].assigned()) return false;
+    return (bool)packages_[p].min();
   }
   void setBrancher(void) {
     using namespace Gecode;
@@ -151,10 +163,10 @@ public:
     solver_->install(d);
   }
   void solve(void) {
-    
+    solver_->setOptimize();
     solver_->setBrancher();    
     
-    Gecode::DFS<ParanoidSolver> e(solver_);
+    Gecode::BAB<ParanoidSolver> e(solver_);
     std::cout << "Search will start" << std::endl;
     
     while (Gecode::Space* s = e.next()) {
