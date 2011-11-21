@@ -1,6 +1,7 @@
 #include <cudf/model.hh>
 #include <gecode/kernel.hh>
 #include <gecode/int.hh>
+#include <gecode/search.hh>
 #include <iostream>
 
 using std::cout;
@@ -12,20 +13,24 @@ private:
   // packages in the system
   Gecode::IntVarArray packages_;
   // optimization value
-  Gecode::IntVar opt_;
+  //Gecode::IntVar opt_;
 public:
   /// Constructor
   ParanoidSolver(int packages)
     : packages_(*this,packages,0,1)
-    , opt_(*this,Gecode::Int::Limits::min,Gecode::Int::Limits::max)
+      //, opt_(*this,Gecode::Int::Limits::min,Gecode::Int::Limits::max)
   {}
   /// Copy constructor
-  ParanoidSolver(bool share, ParanoidSolver& other) {
+  ParanoidSolver(bool share, ParanoidSolver& other)
+    : Gecode::Space(share,other) {
     packages_.update(*this,share,other.packages_);
   }
   /// Copy
   Gecode::Space* copy(bool share) {
     return new ParanoidSolver(share,*this);
+  }
+  void print(std::ostream& os) const {
+    os << "something" << endl;
   }
   /// Post a constraint stating that p depends on any in disj
   void depend(int p, const std::vector<int>& disj) {
@@ -63,6 +68,15 @@ public:
   void setOptimize(const std::vector<int>&) {
     
   }
+  void setBrancher(void) {
+    using namespace Gecode;
+    branch(*this,packages_,INT_VAR_DEGREE_MAX,INT_VAL_MIN);
+  }
+  void problemInfo(void) {
+    for (auto x : packages_) {
+      cout << "A variable: " << x << " degree " << x.degree() << endl;
+    }
+  }
 };
 
 class CUDFVersionedPackage;
@@ -89,7 +103,9 @@ public:
     // override to be called.
     loadUniverse();
     interpretRequest();
-   
+
+    //solver_->problemInfo();
+
     cout << "Finished construction" << endl;
   }
   /// Destructor
@@ -105,7 +121,7 @@ public:
       coeffs[rank(p)] =  -(countVersions(p) == 1 ? 
                            (packages().size()) : 
                            1);
-    solver_->setOptimize(coeffs);
+    //solver_->setOptimize(coeffs);
   }
 
   /// Add a dependency between package \a p on one of the packages in
@@ -134,6 +150,20 @@ public:
     
     solver_->install(d);
   }
+  void solve(void) {
+    
+    solver_->setBrancher();    
+    
+    Gecode::DFS<ParanoidSolver> e(solver_);
+    std::cout << "Search will start" << std::endl;
+    
+    while (Gecode::Space* s = e.next()) {
+      static_cast<ParanoidSolver*>(s)->print(std::cout);
+      cout << "solution" << endl;
+      delete s;
+    }
+    
+  }
 };
 
 int main(int argc, char *argv[]) {
@@ -143,6 +173,6 @@ int main(int argc, char *argv[]) {
   }
   
   Paranoid model(argv[1]);
-    
+  model.solve();
   return 0;
 }
