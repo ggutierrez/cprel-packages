@@ -136,7 +136,7 @@ public:
     coeff_rank_ = 1;
   }
   /// Handle keep constraint \a kcst for package \a p with impact \a pkgs
-  virtual void keep(int kcst, CUDFVersionedPackage *p, const std::vector<CUDFVersionedPackage*>& pkgs) {
+  virtual void keep(int , CUDFVersionedPackage *, const std::vector<CUDFVersionedPackage*>& ) {
     
   }
   /// Handle the installation of one of the packages in \a disj

@@ -60,7 +60,7 @@ public:
     }
     Gecode::linear(*this,x,Gecode::IRT_GQ,1);
   }
-  void setOptimize(const std::vector<int>& coeffs) {
+  void setOptimize(const std::vector<int>&) {
     
   }
 };
@@ -122,7 +122,7 @@ public:
     solver_->conflict(rank(p), rank(q));
   }
   /// Handle keep constraint \a kcst for package \a p with impact \a pkgs
-  virtual void keep(int kcst, CUDFVersionedPackage *p, const std::vector<CUDFVersionedPackage*>& pkgs) {
+  virtual void keep(int , CUDFVersionedPackage *, const std::vector<CUDFVersionedPackage*>&) {
     
   }
   /// Handle the installation of one of the packages in \a disj
