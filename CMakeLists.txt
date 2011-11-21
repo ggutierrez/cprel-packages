@@ -129,7 +129,9 @@ add_library(unsaparser
 add_executable(lp-paranoid solver-lp-paranoid/paranoid.cpp)
 target_link_libraries(lp-paranoid unsaparser ${GLPK_LIB})
 
-add_executable(cpint-paranoid solver-cpint-paranoid/paranoid.cpp)
+add_executable(cpint-paranoid solver-cpint-paranoid/paranoid.cpp
+  solver-cpint-paranoid/brancher.cpp
+)
 target_link_libraries(cpint-paranoid unsaparser ${GECODE_LIBRARIES})
 
 #add_executable(statistics tools/stats.cpp)

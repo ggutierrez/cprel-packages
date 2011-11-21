@@ -7,6 +7,11 @@
 using std::cout;
 using std::endl;
 using Gecode::Space;
+using Gecode::Home;
+using Gecode::IntVarArgs;
+
+void nonemin(Home home, const IntVarArgs& x);
+
 
 class ParanoidSolver : public Gecode::Space {
 private:
@@ -34,7 +39,7 @@ public:
   virtual void constrain(const Gecode::Space& sol_) {
     const ParanoidSolver& sol = static_cast<const ParanoidSolver&>(sol_);
     // Maximization
-    Gecode::rel(*this,opt_,Gecode::IRT_GR,sol.opt_);
+    Gecode::rel(*this,opt_,Gecode::IRT_LE,sol.opt_);
   }
   void print(std::ostream& os) const {
     os << "Optimization " << opt_ << endl;
@@ -72,17 +77,37 @@ public:
     }
     Gecode::linear(*this,x,Gecode::IRT_GQ,1);
   }
-  void setOptimize(/* const std::vector<int>& */) {
-    Gecode::linear(*this,packages_,Gecode::IRT_EQ,opt_);
+  void setOptimize(const std::vector<int>& coeff) {
+    Gecode::linear(*this,coeff,packages_,Gecode::IRT_EQ,opt_);
   }
   /// Returns the status (true: installed, false otherwise) of a package in the solver
   bool packageInstalled(int p) const {
     if (!packages_[p].assigned()) return false;
     return (bool)packages_[p].min();
   }
-  void setBrancher(void) {
+  void setBrancher(const std::vector<int>& coeff) {
     using namespace Gecode;
-    branch(*this,packages_,INT_VAR_DEGREE_MAX,INT_VAL_MIN);
+    IntVarArgs must, fair, bad;
+    int var = 0;
+    for (int w : coeff) {
+      if (w == 1)
+        bad << packages_[var];
+      else if (w == -1)
+        fair << packages_[var];
+      else
+        must << packages_[var];
+      var++;
+    }
+    cout << "Must " << must.size() << endl;
+    cout << "Fair " << fair.size() << endl;
+    cout << "Bad " << bad.size() << endl;
+
+    branch(*this,bad,INT_VAR_DEGREE_MAX,INT_VAL_MIN);
+    branch(*this,fair,INT_VAR_DEGREE_MAX,INT_VAL_MAX);   
+    branch(*this,must,INT_VAR_DEGREE_MAX,INT_VAL_MAX);
+   
+
+    //nonemin(*this,packages_);
   }
   void problemInfo(void) {
     for (auto x : packages_) {
@@ -133,7 +158,8 @@ public:
       coeffs[rank(p)] =  -(countVersions(p) == 1 ? 
                            (packages().size()) : 
                            1);
-    //solver_->setOptimize(coeffs);
+    solver_->setOptimize(coeffs);
+    solver_->setBrancher(coeffs);
   }
 
   /// Add a dependency between package \a p on one of the packages in
@@ -163,8 +189,7 @@ public:
     solver_->install(d);
   }
   void solve(void) {
-    solver_->setOptimize();
-    solver_->setBrancher();    
+    objective();
     
     Gecode::BAB<ParanoidSolver> e(solver_);
     std::cout << "Search will start" << std::endl;
