@@ -3,6 +3,10 @@
 #include <gecode/int.hh>
 #include <gecode/search.hh>
 #include <iostream>
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <unordered_map>
 
 using std::cout;
 using std::endl;
@@ -122,6 +126,10 @@ class Paranoid : public CUDFTools::Model {
 private:
   /// CP model
   ParanoidSolver *solver_;
+  /// Data structure for repeated packages
+  std::unordered_map<std::string, int> definedDisj;
+  /// Hit counter
+  int hits_;
 public:
     // Objects of this class are non-copyable
   Paranoid() = delete;
@@ -129,7 +137,7 @@ public:
   Paranoid& operator = (const Paranoid&) = delete;
   /// Constructor from a input specification in \a cudf
   Paranoid(const char* cudf)
-    : CUDFTools::Model(cudf), solver_(NULL)
+    : CUDFTools::Model(cudf), solver_(NULL), hits_(0)
   {    
     // The constructor of the superclass will read everything in cudf,
     // making the number of packages available.
@@ -162,18 +170,44 @@ public:
     solver_->setBrancher(coeffs);
   }
 
+  int lookUpOrAdd(const std::vector<CUDFVersionedPackage*>& disj) {
+    std::string key;
+    for (CUDFVersionedPackage *d : disj) 
+      key += rank(d);
+    if (definedDisj.count(key) > 0) {
+      hits_++;
+    } else {
+      definedDisj[key] = packages().size() + definedDisj.size();
+    }
+  }
   /// Add a dependency between package \a p on one of the packages in
   /// \a disj
   virtual void depend(CUDFVersionedPackage *p, const std::vector<CUDFVersionedPackage*>& disj) {
+    int disjId = lookUpOrAdd(disj);
+
+    bool check = foundInstalled(p);
+    int installed = 0;
+    
     std::vector<int> a;
     a.reserve(disj.size());
-    for (CUDFVersionedPackage *d : disj)
+    for (CUDFVersionedPackage *d : disj) {
       a.push_back(rank(d));
+      if (check && foundInstalled(d)) installed++;
+    }
     solver_->depend(rank(p), a);
+
+    if (check && installed == 0) {
+      cout << "package " << rank(p) << " installed with missing dependencies" << std::endl;
+      //cout << "package " << versionedName(p) << " installed with missing dependencies" << std::endl;
+    } 
   }
   /// Add a conflict between package \a p and package \a q
   virtual void conflict(CUDFVersionedPackage *p, CUDFVersionedPackage *q) {
     solver_->conflict(rank(p), rank(q));
+    if (foundInstalled(p) && foundInstalled(q)) {
+      //cout << "Existent conflict " << rank(p) << " with " << rank(q) << std::endl;
+      //cout << "Existent conflict " << versionedName(p) << " with " << versionedName(q) << std::endl;
+    }
   }
   /// Handle keep constraint \a kcst for package \a p with impact \a pkgs
   virtual void keep(int , CUDFVersionedPackage *, const std::vector<CUDFVersionedPackage*>&) {
@@ -189,6 +223,7 @@ public:
     solver_->install(d);
   }
   void solve(void) {
+    cout << "Hits: " << hits_ << std::endl;
     objective();
     
     Gecode::BAB<ParanoidSolver> e(solver_);
@@ -198,18 +233,39 @@ public:
       static_cast<ParanoidSolver*>(s)->print(std::cout);
       cout << "solution" << endl;
       delete s;
+    }    
+  }
+  
+  void testSolution(std::istream& sol) {
+    std::string line;
+    int numLines = 0;
+    while (sol.good()) {
+      std::getline(sol,line);
+      assert(!line.empty());
+      std::stringstream st(line);
+      int p; st >> p;
+      solver_->install({p});
+      numLines++;
     }
-    
+    cout << "Readed " << numLines << " packages installed";
   }
 };
 
+
 int main(int argc, char *argv[]) {
-  if (argc != 2) {
+  if (argc != 3) {
     cout << "Invalid number of arguments" << endl;
     exit(1);
   }
   
+  std::fstream sol(argv[2]);
+  if (!sol.good()) {
+    std::cout << "Unable to open solution file" << std::endl;
+    exit(1);
+  }
+  
   Paranoid model(argv[1]);
+  //model.testSolution(sol);
   model.solve();
   return 0;
 }

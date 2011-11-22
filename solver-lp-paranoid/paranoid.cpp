@@ -1,6 +1,7 @@
 #include <cudf/model.hh>
 #include <glpk.h>
 #include <iostream>
+#include <fstream>
 
 using std::cout;
 using std::endl;
@@ -187,6 +188,7 @@ public:
     for (CUDFVersionedPackage *p : packages()) {
       if (getStatus(p) > 0.7) {
         installed++;
+	os << rank(p) << std::endl;
         if (!foundInstalled(p))
           newInstalled++;
       } else {
@@ -214,7 +216,7 @@ public:
 };
 
 int main(int argc, char *argv[]) {
-  if (argc != 2) {
+  if (argc != 3) {
     cout << "Invalid number of arguments" << endl;
     exit(1);
   }
@@ -222,7 +224,12 @@ int main(int argc, char *argv[]) {
   Paranoid model(argv[1]);
   if (model.solve()) {
     cout << "Solution was found" << endl;
-    model.printStats(cout);
+    std::fstream solution(argv[2], std::fstream::out);
+    if (!solution.good()) {
+      cout << "Problem openning the output file" << std::endl;
+      exit(1);
+    }
+    model.printStats(solution);
     //model.printSolutionCUDF(cout);
   } else {
     cout << "Problem is unsatisfiable" << endl;
