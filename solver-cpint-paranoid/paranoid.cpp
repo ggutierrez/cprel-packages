@@ -137,6 +137,15 @@ public:
     if (!packages_[p].assigned()) return false;
     return (bool)packages_[p].min();
   }
+  /// Prints the virtuals that got installed at the end of the solving
+  void virtualsInstalled(void) const {
+    int i = 0;
+    for (const Gecode::IntVar& v : virtuals_) {
+      if (v.assigned()) 
+        cout << "Virtual " << i << ": installed" << endl;
+      i++;
+    }
+  }
   void setBrancher(const std::vector<int>& coeff) {
     using namespace Gecode;
     IntVarArgs must, fair, bad;
@@ -207,7 +216,7 @@ public:
   virtual ~Paranoid(void) {}
   void objective(void) {
     std::vector<int> coeffs(packages().size());
-
+    
     // try to keep packages that are uninstalled already uninstalled
     for (CUDFVersionedPackage *p : uninstalledPackages())
       coeffs[rank(p)] = 1;
@@ -219,7 +228,7 @@ public:
     solver_->setOptimize(coeffs);
     solver_->setBrancher(coeffs);
   }
-  
+  /// Transforms the disjunction of packages \a disj into packages identifiers
   std::vector<int> toPackageIds(const std::vector<CUDFVersionedPackage*>& disj) {
     std::vector<int> r;
     r.reserve(disj.size());
@@ -229,13 +238,15 @@ public:
     
     return r;
   }
+  /// Returns the package identifier of \a p
   int toPackageId(CUDFVersionedPackage *p) {
     return rank(p);
   }
+  /// Transform \a disj into a cannonical form
   void makeCanonic(std::vector<int>& disj) {
     std::sort(std::begin(disj),std::end(disj));
   }
-  /// Returns a canonic key out of the \a disj
+  /// Returns a  key for the canonic version of \a disj
   std::string makeKey(std::vector<int>& disj) {
     makeCanonic(disj);
     std::string key;
@@ -311,12 +322,16 @@ public:
     std::cout << "Search will start" << std::endl;
     
     while (Gecode::Space* s = e.next()) {
-      static_cast<ParanoidSolver*>(s)->print(std::cout);
+      //static_cast<ParanoidSolver*>(s)->print(std::cout);
+      static_cast<ParanoidSolver*>(s)->virtualsInstalled();
       cout << "solution" << endl;
       delete s;
     }    
   }
-  
+  /**
+   * \brief Read a solution to the current problem from \a sol and
+   * test if it is actually a slution.
+   */
   void testSolution(std::istream& sol) {
     std::string line;
     int numLines = 0;
