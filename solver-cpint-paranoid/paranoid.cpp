@@ -50,6 +50,10 @@ public:
     // Maximization
     Gecode::rel(*this,opt_,Gecode::IRT_LE,sol.opt_);
   }
+  /// Return the value of the optimization
+  int optimization(void) const {
+    return opt_.min();
+  }
   void print(std::ostream& os) const {
     os << "Optimization " << opt_ << endl;
   }
@@ -239,7 +243,7 @@ public:
     return r;
   }
   /// Returns the package identifier of \a p
-  int toPackageId(CUDFVersionedPackage *p) {
+  int toPackageId(CUDFVersionedPackage *p) const  {
     return rank(p);
   }
   /// Transform \a disj into a cannonical form
@@ -314,6 +318,23 @@ public:
     
     solver_->install(d);
   }
+  void solutionStats(std::ostream& os, const ParanoidSolver& sol) const {
+    // get the number of packages that where removed and installed
+    int installed = 0, removed = 0;
+    for (CUDFVersionedPackage *p : packages()) {
+      int id = toPackageId(p);
+      bool currentlyInstalled = sol.packageInstalled(id);
+      bool wasinstalled = foundInstalled(p);
+      if (currentlyInstalled)
+        installed++;
+      else 
+        if (wasinstalled)
+          removed++;
+    }
+    os << "Installed: " << installed << endl
+       << "Removed: " << removed << endl
+       << "Optimization: " << sol.optimization() << endl;
+  }
   void solve(void) {
     cout << "Hits: " << hits_ << std::endl;
     objective();
@@ -322,9 +343,10 @@ public:
     std::cout << "Search will start" << std::endl;
     
     while (Gecode::Space* s = e.next()) {
-      //static_cast<ParanoidSolver*>(s)->print(std::cout);
-      static_cast<ParanoidSolver*>(s)->virtualsInstalled();
-      cout << "solution" << endl;
+      ParanoidSolver *sol = static_cast<ParanoidSolver*>(s);
+      solutionStats(std::cout,*sol);
+      //static_cast<ParanoidSolver*>(s)->virtualsInstalled();
+      //cout << "solution" << endl;
       delete s;
     }    
   }
