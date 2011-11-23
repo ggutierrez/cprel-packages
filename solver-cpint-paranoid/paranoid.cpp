@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <sstream>
 #include <fstream>
 #include <unordered_map>
 
@@ -21,6 +22,8 @@ class ParanoidSolver : public Gecode::Space {
 private:
   // packages in the system
   Gecode::IntVarArray packages_;
+  // virtual packages in the system
+  std::vector<Gecode::IntVar> virtuals_;
   // optimization value
   Gecode::IntVar opt_;
 public:
@@ -34,6 +37,8 @@ public:
     : Gecode::Space(share,other) {
     packages_.update(*this,share,other.packages_);
     opt_.update(*this,share,other.opt_);
+    for (auto i = virtuals_.size(); i--;) 
+      virtuals_[i].update(*this, share, other.virtuals_[i]);
   }
   /// Copy
   Gecode::Space* copy(bool share) {
@@ -47,6 +52,38 @@ public:
   }
   void print(std::ostream& os) const {
     os << "Optimization " << opt_ << endl;
+  }
+  /// Post a dependency between a package and a virtual package
+  void dependOnVirtual(int p, int q) {
+    Gecode::IntArgs a(2);
+    Gecode::IntVarArgs x(2);
+    a[0] = -1; a[1] = 1;
+    x[0] = packages_[p];
+    x[1] = virtuals_[q];
+    Gecode::linear(*this,a,x,Gecode::IRT_GQ,0);
+  }
+  /// Creates a virtual package in the solver that can be provided by
+  /// any package in \a disj
+  int createVirtual(const std::vector<int>& disj) {
+    int index = virtuals_.size();
+    Gecode::IntVar v(*this,0,1);
+    virtuals_.push_back(v);
+
+    // prepare the constraint that will install the virtual if at
+    // least one of the packages in the disjunctions is installed.
+    Gecode::IntArgs a(disj.size() + 1);
+    Gecode::IntVarArgs x(disj.size() + 1);
+    int i = 0;
+    for (int pi : disj) {
+      x[i] = packages_[pi];
+      a[i] = 1;
+      i++;
+    }
+    a[i] = -1;
+    x[i] = v;
+
+    Gecode::linear(*this,a,x,Gecode::IRT_GQ,0);
+    return index;
   }
   /// Post a constraint stating that p depends on any in disj
   void depend(int p, const std::vector<int>& disj) {
@@ -102,6 +139,7 @@ public:
         must << packages_[var];
       var++;
     }
+    
     cout << "Must " << must.size() << endl;
     cout << "Fair " << fair.size() << endl;
     cout << "Bad " << bad.size() << endl;
@@ -127,7 +165,7 @@ private:
   /// CP model
   ParanoidSolver *solver_;
   /// Data structure for repeated packages
-  std::unordered_map<std::string, int> definedDisj;
+  std::unordered_map<std::string, int> definedDisj_;
   /// Hit counter
   int hits_;
 public:
@@ -169,37 +207,68 @@ public:
     solver_->setOptimize(coeffs);
     solver_->setBrancher(coeffs);
   }
+  
+  std::vector<int> toPackageIds(const std::vector<CUDFVersionedPackage*>& disj) {
+    std::vector<int> r;
+    r.reserve(disj.size());
 
-  int lookUpOrAdd(const std::vector<CUDFVersionedPackage*>& disj) {
-    std::string key;
-    for (CUDFVersionedPackage *d : disj) 
-      key += rank(d);
-    if (definedDisj.count(key) > 0) {
-      hits_++;
-    } else {
-      definedDisj[key] = packages().size() + definedDisj.size();
-    }
+    for (CUDFVersionedPackage *p : disj)
+      r.push_back(rank(p));
+    
+    return r;
   }
+  int toPackageId(CUDFVersionedPackage *p) {
+    return rank(p);
+  }
+  void makeCanonic(std::vector<int>& disj) {
+    std::sort(std::begin(disj),std::end(disj));
+  }
+  /// Returns a canonic key out of the \a disj
+  std::string makeKey(std::vector<int>& disj) {
+    makeCanonic(disj);
+    std::string key;
+    std::stringstream ss(key);
+    for (int p : disj)
+      ss << p;
+    return ss.str();
+  }
+  /**
+   * \brief Handle the disjunction \a disj.
+   *
+   * If an equivalent disjunctio has been already added then this
+   * method returns the index of the virtual package corresponding to
+   * it. Otherwise it creates, registers and return a new virtual
+   * package.
+   */
+  int lookUpOrAdd(std::vector<int>& disj) {
+    std::string key(makeKey(disj));
+    auto f = definedDisj_.find(key);
+    if (f != definedDisj_.end()) {
+      // a disjunction like this already exists.
+      hits_++;
+      return f->second;;
+    }
+    
+    // Create the disjunction in the solver
+    int vp = solver_->createVirtual(disj);
+    definedDisj_[key] = vp;
+    return vp;
+  }
+
   /// Add a dependency between package \a p on one of the packages in
   /// \a disj
   virtual void depend(CUDFVersionedPackage *p, const std::vector<CUDFVersionedPackage*>& disj) {
-    int disjId = lookUpOrAdd(disj);
-
-    bool check = foundInstalled(p);
-    int installed = 0;
     
-    std::vector<int> a;
-    a.reserve(disj.size());
-    for (CUDFVersionedPackage *d : disj) {
-      a.push_back(rank(d));
-      if (check && foundInstalled(d)) installed++;
-    }
-    solver_->depend(rank(p), a);
+    // convert the disjuntion into package identifiers
+    std::vector<int> d = toPackageIds(disj);
 
-    if (check && installed == 0) {
-      cout << "package " << rank(p) << " installed with missing dependencies" << std::endl;
-      //cout << "package " << versionedName(p) << " installed with missing dependencies" << std::endl;
-    } 
+    if (disj.size() == 1) {
+      solver_->depend(toPackageId(p), d);
+      return;
+    }
+    
+    int disjId = lookUpOrAdd(d);
+    solver_->dependOnVirtual(toPackageId(p),disjId);
   }
   /// Add a conflict between package \a p and package \a q
   virtual void conflict(CUDFVersionedPackage *p, CUDFVersionedPackage *q) {
@@ -265,7 +334,7 @@ int main(int argc, char *argv[]) {
   }
   
   Paranoid model(argv[1]);
-  //model.testSolution(sol);
+  model.testSolution(sol);
   model.solve();
   return 0;
 }
