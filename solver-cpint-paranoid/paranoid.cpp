@@ -81,8 +81,19 @@ public:
     }
     a[i] = -1;
     x[i] = v;
-
     Gecode::linear(*this,a,x,Gecode::IRT_GQ,0);
+    
+    // prepare the constraint that will make the virtual installed if
+    // any of its providers is installed.
+    for (int pi : disj) {
+      Gecode::IntArgs a(2);
+      Gecode::IntVarArgs x(2);
+      a[0] = -1; a[1] = 1;
+      x[0] = packages_[pi];
+      x[1] = v;
+      Gecode::linear(*this,a,x,Gecode::IRT_GQ,0);
+    }
+    
     return index;
   }
   /// Post a constraint stating that p depends on any in disj
@@ -139,7 +150,8 @@ public:
         must << packages_[var];
       var++;
     }
-    
+
+    cout << "Virtuals: " << virtuals_.size() << endl;
     cout << "Must " << must.size() << endl;
     cout << "Fair " << fair.size() << endl;
     cout << "Bad " << bad.size() << endl;
