@@ -191,8 +191,6 @@ private:
   ParanoidSolver *solver_;
   /// Data structure for repeated packages
   std::unordered_map<std::string, int> definedDisj_;
-  /// Hit counter
-  int hits_;
 public:
     // Objects of this class are non-copyable
   Paranoid() = delete;
@@ -200,7 +198,7 @@ public:
   Paranoid& operator = (const Paranoid&) = delete;
   /// Constructor from a input specification in \a cudf
   Paranoid(const char* cudf)
-    : CUDFTools::Model(cudf), solver_(NULL), hits_(0)
+    : CUDFTools::Model(cudf), solver_(NULL)
   {    
     // The constructor of the superclass will read everything in cudf,
     // making the number of packages available.
@@ -236,7 +234,7 @@ public:
   std::vector<int> toPackageIds(const std::vector<CUDFVersionedPackage*>& disj) {
     std::vector<int> r;
     r.reserve(disj.size());
-
+    
     for (CUDFVersionedPackage *p : disj)
       r.push_back(rank(p));
     
@@ -272,7 +270,6 @@ public:
     auto f = definedDisj_.find(key);
     if (f != definedDisj_.end()) {
       // a disjunction like this already exists.
-      hits_++;
       return f->second;;
     }
     
@@ -336,7 +333,6 @@ public:
        << "Optimization: " << sol.optimization() << endl;
   }
   void solve(void) {
-    cout << "Hits: " << hits_ << std::endl;
     objective();
     
     Gecode::BAB<ParanoidSolver> e(solver_);
@@ -352,9 +348,10 @@ public:
   }
   /**
    * \brief Read a solution to the current problem from \a sol and
-   * test if it is actually a slution.
+   * returnes it
    */
-  void testSolution(std::istream& sol) {
+  static std::vector<int> readSolution(std::istream& sol) {
+    std::vector<int> s;
     std::string line;
     int numLines = 0;
     while (sol.good()) {
@@ -362,10 +359,20 @@ public:
       assert(!line.empty());
       std::stringstream st(line);
       int p; st >> p;
-      solver_->install({p});
+      s.push_back(p);
       numLines++;
     }
     cout << "Readed " << numLines << " packages installed";
+    return s;
+  }
+  /**
+   * \brief Post solution
+   *
+   * Takes all the packages in \a sol and ask the solver to install them.
+   */
+  void postSolution(const std::vector<int>& sol) {
+    for (int p : sol)
+      solver_->install({p});
   }
 };
 
@@ -383,7 +390,8 @@ int main(int argc, char *argv[]) {
   }
   
   Paranoid model(argv[1]);
-  model.testSolution(sol);
+  std::vector<int> s = Paranoid::readSolution(sol);
+  model.postSolution(s);
   model.solve();
   return 0;
 }
