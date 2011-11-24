@@ -134,6 +134,14 @@ add_executable(cpint-paranoid solver-cpint-paranoid/paranoid.cpp
 )
 target_link_libraries(cpint-paranoid unsaparser ${GECODE_LIBRARIES})
 
+add_executable(cprel-paranoid solver-cprel-paranoid/paranoid.cpp)
+target_link_libraries(cprel-paranoid 
+  unsaparser 
+  ${GECODE_LIBRARIES}
+  ${CPREL_LIBRARIES} 
+)
+
+
 #add_executable(statistics tools/stats.cpp)
 #target_link_libraries(statistics ${CUDF_LIB} ${KCUDF_LIB} ${CPREL_LIBRARIES} ${Boost_LIBRARIES})
 
