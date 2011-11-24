@@ -2,6 +2,7 @@
 #include <gecode/kernel.hh>
 #include <gecode/search.hh>
 #include <rel/grelation.hh>
+#include <cprel/cprel.hh>
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -18,6 +19,7 @@ using std::string;
 using Gecode::Space;
 using Gecode::Home;
 using Gecode::BAB;
+using MPG::CPRelVar;
 using MPG::GRelation;
 using MPG::Tuple;
 
@@ -26,7 +28,7 @@ private:
   /// Indicates if this represents a solution
   bool solution_;
   /// Dependencies
-  GRelation deps_;
+  CPRelVar deps_;
   /// Provides
   GRelation provides_;
   /// Conflicts
@@ -41,7 +43,7 @@ public:
   /// Constructor
   ParanoidSolver(int concretePackages)
   : solution_(false)
-  , deps_(2)
+  , deps_(*this,GRelation(2),GRelation::create_full(2))
   , provides_(2)
   , conflicts_(2)
   , install_(1)
@@ -53,11 +55,11 @@ public:
   /// Copy constructor
   ParanoidSolver(bool share, ParanoidSolver& other)
     : Space(share,other)
-    , deps_(other.deps_)
-    , conflicts_(other.conflicts_)
+     , conflicts_(other.conflicts_)
     , provides_(other.provides_)
     , install_(other.install_)
   {
+    deps_.update(*this,share,other.deps_);
     cout << "Finished constructor of problem" << endl;
   }
   /// Copy
@@ -77,7 +79,9 @@ public:
   }
   /// Post a dependency between a package and a virtual package
   void dependOnVirtual(int p, int q) {
-    deps_.add(Tuple({p,q}));
+    GRelation r(2);
+    r.add(Tuple({p,q}));
+    include(*this,deps_,r);
   }
   /// Creates a virtual package in the solver that can be provided by
   /// any package in \a disj
@@ -100,15 +104,21 @@ public:
 
     // it is not possible to have one of the providers installed
     // without having the virtual installed
-    for (int p: disj)
-      deps_.add(Tuple({p,nextVirtual}));
+    for (int p: disj) {
+      GRelation r(2);
+      r.add(Tuple({p,nextVirtual}));
+      include(*this,deps_,r);
+    }
     return nextVirtual;
   }
   /// Post a constraint stating that p depends on any in disj
   void depend(int p, const vector<int>& disj) {
     if (disj.size() != 1)
       cout << "Ouch, fix me!" << endl;
-    deps_.add(Tuple({p,disj.at(0)}));
+    //deps_.add(Tuple({p,disj.at(0)}));
+    GRelation r(2);
+    r.add(Tuple({p,disj.at(0)}));
+    include(*this,deps_,r);
   }
   /// Post the constraint that p conflicts with q
   void conflict(int p, int q) {
@@ -133,10 +143,11 @@ public:
   }
   void problemInfo(void) const {
     cout << "Prolem information:" << endl
-         << "\tDependencies: " << deps_.cardinality()
+         << "\tDependencies: " << deps_.glb().cardinality()
          << "\tProvides: " << provides_.cardinality()
          << "\tConflicts: " << conflicts_.cardinality()
          << "\tInstall: " << install_.cardinality()
+         << "\tVirtual packages: " << virtualPackages_
          << endl;
   }
 };
