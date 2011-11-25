@@ -30,36 +30,45 @@ private:
   /// Dependencies
   CPRelVar deps_;
   /// Provides
-  GRelation provides_;
+  CPRelVar provides_;
   /// Conflicts
-  GRelation conflicts_;
+  CPRelVar conflicts_;
   /// Installation
-  GRelation install_;
+  CPRelVar install_;
   /// Number of concrete packages
   int concretePackages_;
   /// Number of virtual packages
   int virtualPackages_;
+  /// Ground relations used while the input is read
+  GRelation deps0_;
+  GRelation confs0_;
+  GRelation provs0_;
+  GRelation install0_;
 public:
   /// Constructor
   ParanoidSolver(int concretePackages)
   : solution_(false)
   , deps_(*this,GRelation(2),GRelation::create_full(2))
-  , provides_(2)
-  , conflicts_(2)
-  , install_(1)
+  , provides_(*this,GRelation(2),GRelation::create_full(2))
+  , conflicts_(*this,GRelation(2),GRelation::create_full(2))
+  , install_(*this,GRelation(1),GRelation::create_full(1))
   , concretePackages_(concretePackages)
-  , virtualPackages_(0) 
-  {
-    cout << "Created solver for " << concretePackages << " packages" << endl;
-  }
+  , virtualPackages_(0)
+  , deps0_(2), confs0_(2), provs0_(2), install0_(1)
+  {}
   /// Copy constructor
   ParanoidSolver(bool share, ParanoidSolver& other)
     : Space(share,other)
-     , conflicts_(other.conflicts_)
-    , provides_(other.provides_)
-    , install_(other.install_)
+    , solution_(other.solution_)
+    , concretePackages_(other.concretePackages_)
+    , virtualPackages_(other.virtualPackages_)
+    , deps0_(other.deps0_), confs0_(other.confs0_)
+    , provs0_(other.provs0_), install0_(other.install0_)
   {
     deps_.update(*this,share,other.deps_);
+    provides_.update(*this,share,other.provides_);
+    conflicts_.update(*this,share,other.conflicts_);
+    install_.update(*this,share,other.install_);
     cout << "Finished constructor of problem" << endl;
   }
   /// Copy
@@ -69,19 +78,34 @@ public:
   /// Optimization
   virtual void constrain(const Space& sol_) {
     const ParanoidSolver& sol = static_cast<const ParanoidSolver&>(sol_);
+    (void) sol;
   }
   /// Return the value of the optimization
   int optimization(void) const {
-    
+    return 0;
   }
+  /// Constraint variable initialization
+  void initVariables(void) {
+    include(*this,deps_,deps0_);
+    include(*this,conflicts_,confs0_);
+    exclude(*this,provides_,provs0_.complement());
+    include(*this,install_,install0_);
+
+    //GRelation all = deps0_.Union(confs0_).Union(provs0_);
+    GRelation all(1);
+    for (int i = 0; i < concretePackages_; i++)
+      all.add(Tuple({i}));
+    for (int i = 0; i < virtualPackages_; i++)
+      all.add(Tuple({i + concretePackages_+i}));
+    exclude(*this,install_,all.complement());
+  }
+
   void print(std::ostream& os) const {
-    
+    (void)os;
   }
   /// Post a dependency between a package and a virtual package
   void dependOnVirtual(int p, int q) {
-    GRelation r(2);
-    r.add(Tuple({p,q}));
-    include(*this,deps_,r);
+    deps0_.add(Tuple({p,q}));
   }
   /// Creates a virtual package in the solver that can be provided by
   /// any package in \a disj
@@ -100,54 +124,52 @@ public:
     // the new virtual is provided by any of the packages of the
     // disjunction
     for (int p : disj)
-      provides_.add(Tuple({p,nextVirtual}));
+      provs0_.add(Tuple({p,nextVirtual}));
 
     // it is not possible to have one of the providers installed
     // without having the virtual installed
-    for (int p: disj) {
-      GRelation r(2);
-      r.add(Tuple({p,nextVirtual}));
-      include(*this,deps_,r);
-    }
+    for (int p: disj)
+      deps0_.add(Tuple({p,nextVirtual}));
+    
     return nextVirtual;
   }
   /// Post a constraint stating that p depends on any in disj
   void depend(int p, const vector<int>& disj) {
     if (disj.size() != 1)
       cout << "Ouch, fix me!" << endl;
-    //deps_.add(Tuple({p,disj.at(0)}));
-    GRelation r(2);
-    r.add(Tuple({p,disj.at(0)}));
-    include(*this,deps_,r);
+    deps0_.add(Tuple({p,disj.at(0)}));
   }
   /// Post the constraint that p conflicts with q
   void conflict(int p, int q) {
-    conflicts_.add(Tuple({p,q}));
+    confs0_.add(Tuple({p,q}));
   }
   void install(int p) {
-    install_.add(Tuple({p}));
+    install0_.add(Tuple({p}));
   }
   void setOptimize(const vector<int>& coeff) {
-    
+    (void) coeff;
   }
   /// Returns the status (true: installed, false otherwise) of a package in the solver
   bool packageInstalled(int p) const {
-  
+    (void)p;
+    return false;
   }
   /// Prints the virtuals that got installed at the end of the solving
   void virtualsInstalled(void) const {
   
   }
   void setBrancher(const vector<int>& coeff) {
-  
+    (void)coeff;
   }
   void problemInfo(void) const {
     cout << "Prolem information:" << endl
          << "\tDependencies: " << deps_.glb().cardinality()
-         << "\tProvides: " << provides_.cardinality()
-         << "\tConflicts: " << conflicts_.cardinality()
-         << "\tInstall: " << install_.cardinality()
+         << "\tProvides: " << provides_.lub().cardinality()
+         << "\tConflicts: " << conflicts_.glb().cardinality()
+         << "\tInstall: " << install_.glb().cardinality()
+         << "..." << install_.lub().cardinality()
          << "\tVirtual packages: " << virtualPackages_
+         << "\tConcrete packages: " << concretePackages_
          << endl;
   }
 };
@@ -179,6 +201,7 @@ public:
     loadUniverse();
     interpretRequest();
 
+    solver_->initVariables();
     cout << "Finished construction" << endl;
   }
   /// Destructor
