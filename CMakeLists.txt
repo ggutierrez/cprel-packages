@@ -134,7 +134,9 @@ add_executable(cpint-paranoid solver-cpint-paranoid/paranoid.cpp
 )
 target_link_libraries(cpint-paranoid unsaparser ${GECODE_LIBRARIES})
 
-add_executable(cprel-paranoid solver-cprel-paranoid/paranoid.cpp)
+add_executable(cprel-paranoid solver-cprel-paranoid/paranoid.cpp
+  solver-cprel-paranoid/branch/stableProvides.cpp
+)
 target_link_libraries(cprel-paranoid 
   unsaparser 
   ${GECODE_LIBRARIES}

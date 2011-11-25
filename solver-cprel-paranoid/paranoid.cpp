@@ -23,6 +23,8 @@ using MPG::CPRelVar;
 using MPG::GRelation;
 using MPG::Tuple;
 
+void stableProvides(Home home, CPRelVar inst, CPRelVar provides);
+
 class ParanoidSolver : public Space {
 private:
   /// Indicates if this represents a solution
@@ -99,7 +101,11 @@ public:
       all.add(Tuple({i + concretePackages_+i}));
     exclude(*this,install_,all.complement());
   }
-
+  /// Tries to perform some simplification of the variables
+  void simplify(void) {
+    // how many packages can be provided only by one concrete?
+    
+  }
   void print(std::ostream& os) const {
     (void)os;
   }
@@ -144,22 +150,25 @@ public:
     confs0_.add(Tuple({p,q}));
   }
   void install(int p) {
-    install0_.add(Tuple({p}));
-  }
+    Tuple t({p});
+    install0_.add(t);
+    include(*this,install_,install0_);
+ }
   void setOptimize(const vector<int>& coeff) {
     (void) coeff;
   }
   /// Returns the status (true: installed, false otherwise) of a package in the solver
   bool packageInstalled(int p) const {
-    (void)p;
-    return false;
+    GRelation r(1);
+    r.add(Tuple({p}));
+    return r.subsetEq(install_.glb());
   }
   /// Prints the virtuals that got installed at the end of the solving
   void virtualsInstalled(void) const {
   
   }
-  void setBrancher(const vector<int>& coeff) {
-    (void)coeff;
+  void setBrancher(void) {
+    stableProvides(*this,install_,provides_); 
   }
   void problemInfo(void) const {
     cout << "Prolem information:" << endl
@@ -296,6 +305,7 @@ public:
       return;
     }
     int disjId = lookUpOrAdd(d);
+    cout << "The package " << disjId << " needs to be installed" << endl;
     solver_->install(disjId);
   }
   void solutionStats(ostream& os, const ParanoidSolver& sol) const {
@@ -317,7 +327,8 @@ public:
   }
   void solve(void) {
     objective();
-    
+    solver_->setBrancher();
+
     BAB<ParanoidSolver> e(solver_);
     cout << "Search will start" << endl;
     
@@ -345,7 +356,6 @@ public:
       s.push_back(p);
       numLines++;
     }
-    cout << "Readed " << numLines << " packages installed";
     return s;
   }
   /**
@@ -354,8 +364,9 @@ public:
    * Takes all the packages in \a sol and ask the solver to install them.
    */
   void postSolution(const std::vector<int>& sol) {
-    for (int p : sol)
-      solver_->install({p});
+    for (auto p = begin(sol); p != end(sol); ++p) {
+      solver_->install({*p});
+    }
   }
   void problemInfo(void) const {
     solver_->problemInfo();
@@ -363,22 +374,22 @@ public:
 };
 
 int main(int argc, char *argv[]) {
-  if (argc != 2) {
+  if (argc != 3) {
     cout << "Invalid number of arguments" << endl;
     exit(1);
   }
-  /*
+  
   // load the solution file
   std::fstream sol(argv[2]);
   if (!sol.good()) {
     cout << "Unable to open solution file" << endl;
     exit(1);
   }
-  */
+  
   Paranoid model(argv[1]);
-  //vector<int> s = Paranoid::readSolution(sol);
-  //model.postSolution(s);
+  vector<int> s = Paranoid::readSolution(sol);
+  model.postSolution(s);
   model.problemInfo();
-  //model.solve();
+  model.solve();
   return 0;
 }
