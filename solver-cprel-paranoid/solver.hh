@@ -13,7 +13,6 @@ using MPG::GRelation;
 using MPG::Tuple;
 using std::vector;
 
-
 namespace CUDFTools {
   class ParanoidSolver : public Space {
   private:
@@ -44,11 +43,11 @@ namespace CUDFTools {
   /// Copy
   Space* copy(bool share);
   /// Optimization
-  virtual void constrain(const Space& sol_);
+    virtual void constrain(const Space& sol_);
   /// Return the value of the optimization
   int optimization(void) const;
   /// Constraint variable initialization
-  void initVariables(void);
+    void initVariables(void);
   /// Tries to perform some simplification of the variables
     void print(std::ostream& os) const;
   /// Post a dependency between a package and a virtual package
@@ -70,7 +69,7 @@ namespace CUDFTools {
     void problemInfo(void) const;
   /// Returns the packages that are currently installed by the solver
     vector<int> installedPackages(void) const;
-  
+    void knownProviders(int p) const;  
 };
 
 }

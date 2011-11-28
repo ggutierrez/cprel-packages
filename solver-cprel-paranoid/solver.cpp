@@ -115,6 +115,12 @@ namespace CUDFTools {
     r.add(Tuple({p}));
     return r.subsetEq(install_.glb());
   }
+  void ParanoidSolver::knownProviders(int p) const {
+    GRelation r(1);
+    r.add(Tuple({p}));
+    GRelation providers = r.timesULeft(1).intersect(provides_.glb());
+    cout << "the providers " << providers << endl;
+  }
   /// Prints the virtuals that got installed at the end of the solving
   void ParanoidSolver::virtualsInstalled(void) const {
   
