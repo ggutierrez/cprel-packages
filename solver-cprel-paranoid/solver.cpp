@@ -2,7 +2,7 @@
 
 using Gecode::Home;
 void stableProvides(Home home, CPRelVar inst, CPRelVar provides);
-void provides(Space& home, CPRelVar installation, CPRelVar provides);
+void provides(Space& home, CPRelVar installation, CPRelVar provides, GRelation virtuals);
 
 
 namespace CUDFTools {
@@ -14,7 +14,7 @@ namespace CUDFTools {
     , install_(*this,GRelation(1),GRelation::create_full(1))
     , concretePackages_(concretePackages)
     , virtualPackages_(0)
-    , deps0_(2), confs0_(2), provs0_(2), install0_(1)
+    , deps0_(2), confs0_(2), provs0_(2), install0_(1), virtuals_(1)
   {}
 
   ParanoidSolver::ParanoidSolver(bool share, ParanoidSolver& other)
@@ -24,6 +24,7 @@ namespace CUDFTools {
     , virtualPackages_(other.virtualPackages_)
     , deps0_(other.deps0_), confs0_(other.confs0_)
     , provs0_(other.provs0_), install0_(other.install0_)
+    , virtuals_(other.virtuals_)
   {
     deps_.update(*this,share,other.deps_);
     provides_.update(*this,share,other.provides_);
@@ -49,7 +50,8 @@ namespace CUDFTools {
     exclude(*this,provides_,provs0_.complement());
     include(*this,install_,install0_);
 
-    //GRelation all = deps0_.Union(confs0_).Union(provs0_);
+    // To compute the upper bound of the installation we consider the
+    // concrete and virtual packages.
     GRelation all(1);
     for (int i = 0; i < concretePackages_; i++)
       all.add(Tuple({i}));
@@ -59,7 +61,7 @@ namespace CUDFTools {
   }
 
   void ParanoidSolver::postConstraints(void) {
-    provides(*this,install_,provides_);
+    provides(*this,install_,provides_,virtuals_);
   }
   
   void ParanoidSolver::print(std::ostream& os) const {
@@ -91,7 +93,10 @@ namespace CUDFTools {
     // without having the virtual installed
     for (int p: disj)
       deps0_.add(Tuple({p,nextVirtual}));
-    
+
+    // add the new virtual package to the virtuals_ relation
+    virtuals_.add(Tuple({nextVirtual}));
+
     return nextVirtual;
   }
 

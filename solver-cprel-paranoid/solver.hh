@@ -35,6 +35,8 @@ namespace CUDFTools {
     GRelation confs0_;
     GRelation provs0_;
     GRelation install0_;
+    /// A relation to keep the virtual packages
+    GRelation virtuals_;
   public:
   /// Constructor
   ParanoidSolver(int concretePackages);

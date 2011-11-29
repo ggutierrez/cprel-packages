@@ -6,6 +6,7 @@
 using MPG::CPRelVar;
 using MPG::CPRel::CPRelView;
 using MPG::GRelation;
+using MPG::GRelation;
 using Gecode::Home;
 using Gecode::Space;
 
@@ -17,28 +18,32 @@ namespace CPRelPkg {
     CPRelView inst_;
     /// Provides
     CPRelView provides_;
+    /// Virtual packages
+    GRelation virtuals_;
   public:
     /// Constructor for the propagator \f$ equal(left,right) \f$
-    Provides(Home home,  CPRelView inst,  CPRelView dep)
-      : Gecode::Propagator(home), inst_(inst), provides_(dep) {
+    Provides(Home home,  CPRelView inst,  CPRelView dep, GRelation virtuals)
+      : Gecode::Propagator(home), inst_(inst), provides_(dep), virtuals_(virtuals) {
       inst_.subscribe(home,*this,MPG::CPRel::PC_CPREL_BND);
       provides_.subscribe(home,*this,MPG::CPRel::PC_CPREL_BND);
     }
     /// Propagator posting
-    static Gecode::ExecStatus post(Gecode::Home home, CPRelView inst,  CPRelView dep) {
-      (void) new (home) Provides(home,inst,dep);
+    static Gecode::ExecStatus post(Home home, CPRelView inst,  CPRelView dep, GRelation virtuals) {
+      (void) new (home) Provides(home,inst,dep,virtuals);
       return Gecode::ES_OK;
     }
     /// Propagator disposal
     virtual size_t dispose(Gecode::Space& home) {
       inst_.cancel(home,*this,MPG::CPRel::PC_CPREL_BND);
       provides_.cancel(home,*this,MPG::CPRel::PC_CPREL_BND);
+      // what should i do with virtuals here???
+    
       (void) Propagator::dispose(home);
       return sizeof(*this);
     }
     /// Copy constructor
     Provides(Gecode::Space& home, bool share, Provides& p)
-      : Gecode::Propagator(home,share,p) {
+      : Gecode::Propagator(home,share,p), virtuals_(p.virtuals_) {
       inst_.update(home,share,p.inst_);
       provides_.update(home,share,p.provides_);
     }
@@ -64,67 +69,60 @@ namespace CPRelPkg {
       {
         cout << "Running provides propagator" << endl;
       }
+     
+      { // 1. All the packages provided by installed packages should
+        // become known in the provides relation. If a package p is
+        // installed then all the packages it provides should become
+        // installed. This constraint will add virtual packages to the
+        // installation.  Note that if there is a virtual package
+        // installed the intersection will remove it as it is not
+        // possible to have (p,q) in the provides relation being p a
+        // virtual.
+        GRelation provided = inst_.glb().timesURight(1).intersect(provides_.lub());
+        GECODE_ME_CHECK(provides_.include(home,provided));
 
-      {
-        // Every package that is known in the provides relation is installed
-        GRelation knownProvides = provides_.glb();
-        GRelation knownPackages = knownProvides.project(1);
-        GECODE_ME_CHECK(inst_.include(home,knownPackages));
-        
-        GRelation knownConcretes = knownProvides.shiftRight(1);
-        GECODE_ME_CHECK(inst_.include(home,knownConcretes));
-      }
-      
-      {
 	// Every package in the installation needs at least one
 	// provider. If this does not hold then this constraint must
-	// fail.
-        
-	//auto possibleProvides = inst_.glb().timesULeft(1).intersect(provides_.lub());
-	//auto canBeProvided = possibleProvides.project(1);
-	// if (!inst_.glb().eq(canBeProvided)) {
-	//   /*
-        //     std::cout << "There is no provider for " 
-        //             << inst_.glb().difference(canBeProvided) 
-        //             << std::endl; 
-        //   */
-        // //return ES_FAILED;
-          
-        //}
-      }
-
-      /*{
-	// The following propagation rule is only executed when the
-	// change in the relation variables is an exclusion. This is
-	// not as fine grained as I would like, because what we
-	// catually need is to run on the removal osa subrelation from
-	// the provides relation. Probably an advisor will do a better
-	// job here.
-	auto m = MPG::CPRel::CPRelView::me(med);
-	if (m != MPG::CPRel::ME_CPREL_MIN) {
-	  // When there is only one provider possible for a package that
-	  // is needed then we have to ensure the installation of it.
-	  auto needed = inst_.glb();
-	  auto possibleProviders = needed.timesULeft(1).intersect(provides_.lub());
-	  auto uniqueProviders = possibleProviders.unique(1);
-	  auto toIncludeProv = uniqueProviders.intersect(possibleProviders);
-	  auto toIncludeInst = toIncludeProv.shiftRight(1);
-	  GECODE_ME_CHECK(inst_.include(home,toIncludeInst));
-	  
-	  // As result of the last statement we have to keep the
-	  // consistency with the provides relation by including the new
-	  // packages as providers.
-	  GECODE_ME_CHECK(provides_.include(home,toIncludeProv));
-	}
-        }*/
+	// fail.  
+        GRelation virtualsPossible = provides_.lub().project(1);
+        GRelation virtualsNeeded = inst_.glb().intersect(virtuals_);
+        if (!virtualsNeeded.subsetEq(virtualsPossible)) {
+          cout << "Failed, impossible to install needed virtuals" << endl;
+          return ES_FAILED;
+        }
       
-
+        // If there is only one package that can provide it then that
+	// package must be installed to satisfy the constraint.
+        GRelation possibleProviders = virtualsNeeded.timesULeft(1).intersect(provides_.lub());
+        GRelation uniqueProviders = possibleProviders.unique(1);
+        GRelation toIncludeProv = uniqueProviders.intersect(possibleProviders);
+        GECODE_ME_CHECK(provides_.include(home,toIncludeProv));
+        // The inclusion of the provided relation should cause the
+        // installation to be affected so this propagator does not
+        // compute a fix point.
+        //GRelation toIncludeInst = toIncludeProv.shiftRight(1);
+        //GECODE_ME_CHECK(inst_.include(home,toIncludeInst));
+      }
+      { // 4 Anything that cannot be installed should not be in the
+        // provides relation.
+        // GRelation virtualsPossible = provides_.lub().project(1);
+        // GRelation concreteProviders = provides_.lub().shiftRight(1);
+        // GRelation uninstConcretes = concreteProviders.difference(inst_.lub());
+        // GRelation uninstVirtuals = virtualsPossible.difference(inst_.lub());
+        
+        // cout << "There are " << uninstVirtuals.cardinality() << endl;
+        //cout << "Uninstallable packages: " << uninstallable.cardinality() << endl;
+        //GECODE_ME_CHECK(provides_.exclude(home,uninstallable.timesURight(1)));
+        //cout << "Packages in common that cause error " 
+        //  << uninstallable.timesULeft(1).intersect(provides_.glb()) << endl;
+        //GECODE_ME_CHECK(provides_.exclude(home,uninstallable.timesULeft(1)));
+      }      
       if (inst_.assigned() && provides_.assigned())
 	return home.ES_SUBSUMED(*this);
       return Gecode::ES_NOFIX;
     }
   };
-  void provides(Gecode::Space& home, MPG::CPRelVar installation, MPG::CPRelVar provides);
+void provides(Gecode::Space& home, CPRelVar installation, CPRelVar provides, GRelation virtuals);
 }
 
 #endif
