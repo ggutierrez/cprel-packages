@@ -1,8 +1,9 @@
 #include <solver-cprel-paranoid/solver.hh>
 
 using Gecode::Home;
-
 void stableProvides(Home home, CPRelVar inst, CPRelVar provides);
+void provides(Space& home, CPRelVar installation, CPRelVar provides);
+
 
 namespace CUDFTools {
   ParanoidSolver::ParanoidSolver(int concretePackages)
@@ -28,7 +29,6 @@ namespace CUDFTools {
     provides_.update(*this,share,other.provides_);
     conflicts_.update(*this,share,other.conflicts_);
     install_.update(*this,share,other.install_);
-    cout << "Finished constructor of problem" << endl;
   }
 
   Space* ParanoidSolver::copy(bool share) {
@@ -58,15 +58,18 @@ namespace CUDFTools {
     exclude(*this,install_,all.complement());
   }
 
+  void ParanoidSolver::postConstraints(void) {
+    provides(*this,install_,provides_);
+  }
+  
   void ParanoidSolver::print(std::ostream& os) const {
     (void)os;
   }
-  /// Post a dependency between a package and a virtual package
+
   void ParanoidSolver::dependOnVirtual(int p, int q) {
     deps0_.add(Tuple({p,q}));
   }
-  /// Creates a virtual package in the solver that can be provided by
-  /// any package in \a disj
+
   int ParanoidSolver::createVirtual(const vector<int>& disj) {
     // here we just return a new virtual package identifier
     int nextVirtual = concretePackages_ + virtualPackages_;
@@ -91,43 +94,47 @@ namespace CUDFTools {
     
     return nextVirtual;
   }
-  /// Post a constraint stating that p depends on any in disj
+
   void ParanoidSolver::depend(int p, const vector<int>& disj) {
     if (disj.size() != 1)
       cout << "Ouch, fix me!" << endl;
     deps0_.add(Tuple({p,disj.at(0)}));
   }
-  /// Post the constraint that p conflicts with q
+
   void ParanoidSolver::conflict(int p, int q) {
     confs0_.add(Tuple({p,q}));
   }
+
   void ParanoidSolver::install(int p) {
     Tuple t({p});
     install0_.add(t);
     include(*this,install_,install0_);
   }
+
   void ParanoidSolver::setOptimize(const vector<int>& coeff) {
     (void) coeff;
   }
-  /// Returns the status (true: installed, false otherwise) of a package in the solver
+
   bool ParanoidSolver::packageInstalled(int p) const {
     GRelation r(1);
     r.add(Tuple({p}));
     return r.subsetEq(install_.glb());
   }
+
   void ParanoidSolver::knownProviders(int p) const {
     GRelation r(1);
     r.add(Tuple({p}));
     GRelation providers = r.timesULeft(1).intersect(provides_.glb());
     cout << "the providers " << providers << endl;
   }
-  /// Prints the virtuals that got installed at the end of the solving
+
   void ParanoidSolver::virtualsInstalled(void) const {
   
   }
   void ParanoidSolver::setBrancher(void) {
     stableProvides(*this,install_,provides_); 
   }
+
   void ParanoidSolver::problemInfo(void) const {
     cout << "Prolem information:" << endl
          << "\tDependencies: " << deps_.glb().cardinality()
@@ -139,7 +146,7 @@ namespace CUDFTools {
          << "\tConcrete packages: " << concretePackages_
          << endl;
   }
-  /// Returns the packages that are currently installed by the solver
+
   vector<int> ParanoidSolver::installedPackages(void) const {
     vector<int> current;
     current.reserve(install_.glb().cardinality());

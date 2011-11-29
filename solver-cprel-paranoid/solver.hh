@@ -40,17 +40,19 @@ namespace CUDFTools {
   ParanoidSolver(int concretePackages);
   /// Copy constructor
   ParanoidSolver(bool share, ParanoidSolver& other);
-  /// Copy
-  Space* copy(bool share);
-  /// Optimization
-    virtual void constrain(const Space& sol_);
-  /// Return the value of the optimization
-  int optimization(void) const;
-  /// Constraint variable initialization
+    /// Copy
+    Space* copy(bool share);
+    /// Constraint variable initialization
     void initVariables(void);
-  /// Tries to perform some simplification of the variables
+    /// Constraint posting
+    void postConstraints(void);
+    /// Optimization
+    virtual void constrain(const Space& sol_);
+    /// Return the value of the optimization
+    int optimization(void) const;
+    /// Tries to perform some simplification of the variables
     void print(std::ostream& os) const;
-  /// Post a dependency between a package and a virtual package
+    /// Post a dependency between a package and a virtual package
     void dependOnVirtual(int p, int q);
   /// Creates a virtual package in the solver that can be provided by
   /// any package in \a disj

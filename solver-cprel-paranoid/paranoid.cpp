@@ -24,6 +24,7 @@ Paranoid::Paranoid(const char* cudf)
   interpretRequest();
     
   solver_->initVariables();
+  solver_->postConstraints();
   cout << "Finished construction" << endl;
 }
 
@@ -172,9 +173,9 @@ void Paranoid::solve(void) {
   //BAB<CUDFTools::ParanoidSolver> e(solver_);
   DFS<CUDFTools::ParanoidSolver> e(solver_);
   cout << "--- Search will start" << endl;
-    
+  int i = 0;
   while (Space* s = e.next()) {
-    cout << "*** Solution" << endl;
+    cout << "*** Solution(" << i++ << ")" << endl;
     CUDFTools::ParanoidSolver *sol 
       = static_cast<CUDFTools::ParanoidSolver*>(s);
     solutionInfo(cout,*sol);
