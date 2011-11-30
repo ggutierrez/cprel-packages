@@ -134,7 +134,9 @@ namespace CPRelPkg {
       { // 3. When something is no longer possible in provides then it
         // has to be removed from the installation.
         GRelation possibleToProvide = provides_.lub().project(1);
-        GECODE_ME_CHECK(inst_.exclude(home,possibleToProvide.complement()));        
+        GRelation possibleToInstall = inst_.lub().intersect(virtuals_);
+        GRelation cannotInstall = possibleToInstall.difference(possibleToProvide);
+        GECODE_ME_CHECK(inst_.exclude(home,cannotInstall));        
       }
       if (inst_.assigned() && provides_.assigned())
 	return home.ES_SUBSUMED(*this);
