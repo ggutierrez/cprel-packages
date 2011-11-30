@@ -195,7 +195,9 @@ vector<int> Paranoid::readSolution(std::istream& sol) {
   int numLines = 0;
   while (sol.good()) {
     std::getline(sol,line);
-    assert(!line.empty());
+    if (line.empty()) {
+      continue;
+    }
     std::stringstream st(line);
     int p; st >> p;
     s.push_back(p);
@@ -231,8 +233,8 @@ int main(int argc, char *argv[]) {
   }
   
   Paranoid model(argv[1]);
-  vector<int> s = Paranoid::readSolution(sol);
-  model.postSolution(s);
+  //vector<int> s = Paranoid::readSolution(sol);
+  //model.postSolution(s);
   model.problemInfo();
   model.solve();
   return 0;

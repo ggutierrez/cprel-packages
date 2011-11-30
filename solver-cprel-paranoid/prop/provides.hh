@@ -117,6 +117,18 @@ namespace CPRelPkg {
         //  << uninstallable.timesULeft(1).intersect(provides_.glb()) << endl;
         //GECODE_ME_CHECK(provides_.exclude(home,uninstallable.timesULeft(1)));
       }      
+      { // 2. every provide relation known must be reflected in the
+        // installation. 
+        
+        // TODO: Removing what is only possible instead of removing
+        // the whole relation is done because some packages are not in
+        // the installation upper bound. I have to investigate why
+        // this is happening.
+        GRelation knownVirtuals = provides_.glb().project(1);
+        GECODE_ME_CHECK(inst_.include(home,knownVirtuals.intersect(inst_.lub())));
+        GRelation knownProviders = provides_.glb().shiftRight(1);
+        GECODE_ME_CHECK(inst_.include(home,knownProviders.intersect(inst_.lub())));
+      }
       if (inst_.assigned() && provides_.assigned())
 	return home.ES_SUBSUMED(*this);
       return Gecode::ES_NOFIX;
