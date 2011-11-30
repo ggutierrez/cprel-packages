@@ -107,14 +107,24 @@ namespace CPRelPkg {
       }
       { // 4 Anything that cannot be installed should not be in the
         // provides relation.
-        // GRelation virtualsPossible = provides_.lub().project(1);
+        
+        // a possible slow version
+        GRelation notInstallable = inst_.oob();
+        GRelation cannotProvide = notInstallable.timesURight(1);
+        GECODE_ME_CHECK(provides_.exclude(home,cannotProvide));
+
+        //GRelation cannotBeProvided = notInstallable.timesULeft(1);
+        //GECODE_ME_CHECK(provides_.exclude(home,cannotBeProvided));
+
+        //GRelation virtualsPossible = provides_.lub().project(1);
+        
         // GRelation concreteProviders = provides_.lub().shiftRight(1);
         // GRelation uninstConcretes = concreteProviders.difference(inst_.lub());
         // GRelation uninstVirtuals = virtualsPossible.difference(inst_.lub());
         
         // cout << "There are " << uninstVirtuals.cardinality() << endl;
         //cout << "Uninstallable packages: " << uninstallable.cardinality() << endl;
-        //GECODE_ME_CHECK(provides_.exclude(home,uninstallable.timesURight(1)));
+        
         //cout << "Packages in common that cause error " 
         //  << uninstallable.timesULeft(1).intersect(provides_.glb()) << endl;
         //GECODE_ME_CHECK(provides_.exclude(home,uninstallable.timesULeft(1)));
