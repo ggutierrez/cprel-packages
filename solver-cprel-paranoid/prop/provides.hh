@@ -113,21 +113,9 @@ namespace CPRelPkg {
         GRelation cannotProvide = notInstallable.timesURight(1);
         GECODE_ME_CHECK(provides_.exclude(home,cannotProvide));
 
-        //GRelation cannotBeProvided = notInstallable.timesULeft(1);
-        //GECODE_ME_CHECK(provides_.exclude(home,cannotBeProvided));
-
-        //GRelation virtualsPossible = provides_.lub().project(1);
-        
-        // GRelation concreteProviders = provides_.lub().shiftRight(1);
-        // GRelation uninstConcretes = concreteProviders.difference(inst_.lub());
-        // GRelation uninstVirtuals = virtualsPossible.difference(inst_.lub());
-        
-        // cout << "There are " << uninstVirtuals.cardinality() << endl;
-        //cout << "Uninstallable packages: " << uninstallable.cardinality() << endl;
-        
-        //cout << "Packages in common that cause error " 
-        //  << uninstallable.timesULeft(1).intersect(provides_.glb()) << endl;
-        //GECODE_ME_CHECK(provides_.exclude(home,uninstallable.timesULeft(1)));
+        GRelation uninstPossibleProviders = provides_.lub().shiftRight(1).intersect(inst_.oob());
+        GRelation invalidProvides = uninstPossibleProviders.timesURight(1);
+        GECODE_ME_CHECK(provides_.exclude(home,invalidProvides));
       }      
       { // 2. every provide relation known must be reflected in the
         // installation. 
