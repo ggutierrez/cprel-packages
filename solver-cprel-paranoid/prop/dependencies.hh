@@ -18,31 +18,28 @@ namespace CPRelPkg {
     CPRelView inst_;
     /// Dependencies
     CPRelView dependencies_;
-    /// Virtual packages
-    GRelation virtuals_;
  public:
     /// Constructor for the propagator \f$ equal(left,right) \f$
-    Dependencies(Home home,  CPRelView inst,  CPRelView dependencies, GRelation virtuals)
-      : Gecode::Propagator(home), inst_(inst), dependencies_(dependencies), virtuals_(virtuals) {
+    Dependencies(Home home,  CPRelView inst,  CPRelView dependencies)
+      : Gecode::Propagator(home), inst_(inst), dependencies_(dependencies) {
       inst_.subscribe(home,*this,MPG::CPRel::PC_CPREL_BND);
       dependencies_.subscribe(home,*this,MPG::CPRel::PC_CPREL_BND);
     }
     /// Propagator posting
-    static Gecode::ExecStatus post(Home home, CPRelView inst,  CPRelView dependencies, GRelation virtuals) {
-      (void) new (home) Dependencies(home,inst,dependencies,virtuals);
+    static Gecode::ExecStatus post(Home home, CPRelView inst,  CPRelView dependencies) {
+      (void) new (home) Dependencies(home,inst,dependencies);
       return Gecode::ES_OK;
     }
     /// Propagator disposal
     virtual size_t dispose(Gecode::Space& home) {
       inst_.cancel(home,*this,MPG::CPRel::PC_CPREL_BND);
       dependencies_.cancel(home,*this,MPG::CPRel::PC_CPREL_BND);
-      // Todo: remeber to do something with virtuals_
       (void) Propagator::dispose(home);
       return sizeof(*this);
     }
     /// Copy constructor
     Dependencies(Gecode::Space& home, bool share, Dependencies& p)
-      : Gecode::Propagator(home,share,p), virtuals_(p.virtuals_) {
+      : Gecode::Propagator(home,share,p) {
       inst_.update(home,share,p.inst_);
       dependencies_.update(home,share,p.dependencies_);
     }
@@ -81,7 +78,7 @@ namespace CPRelPkg {
       return Gecode::ES_NOFIX;
     }
   };
-  void dependencies(Gecode::Space& home, CPRelVar installation, CPRelVar deps, GRelation virtuals);
+  void dependencies(Gecode::Space& home, CPRelVar installation, CPRelVar deps);
 }
 
 #endif
