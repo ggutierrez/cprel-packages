@@ -3,7 +3,7 @@
 using Gecode::Home;
 void stableProvides(Home home, CPRelVar inst, CPRelVar provides);
 void provides(Space& home, CPRelVar installation, CPRelVar provides, GRelation virtuals);
-
+void dependencies(Space& home, CPRelVar installation, CPRelVar deps, GRelation virtuals);
 
 namespace CUDFTools {
   ParanoidSolver::ParanoidSolver(int concretePackages)
@@ -56,12 +56,13 @@ namespace CUDFTools {
     for (int i = 0; i < concretePackages_; i++)
       all.add(Tuple({i}));
     for (int i = 0; i < virtualPackages_; i++)
-      all.add(Tuple({i + concretePackages_+i}));
+      all.add(Tuple({concretePackages_+i}));
     exclude(*this,install_,all.complement());
   }
 
   void ParanoidSolver::postConstraints(void) {
     provides(*this,install_,provides_,virtuals_);
+    dependencies(*this,install_,deps_,virtuals_);
   }
   
   void ParanoidSolver::print(std::ostream& os) const {
