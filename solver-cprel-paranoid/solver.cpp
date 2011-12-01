@@ -2,6 +2,7 @@
 
 using Gecode::Home;
 void stableProvides(Home home, CPRelVar inst, CPRelVar provides);
+void minimalChanges(Home home, CPRelVar inst, CPRelVar provides, GRelation installed);
 void provides(Space& home, CPRelVar installation, CPRelVar provides, GRelation virtuals);
 void dependencies(Space& home, CPRelVar installation, CPRelVar deps);
 void conflicts(Space& home, CPRelVar installation, CPRelVar confs);
@@ -15,7 +16,7 @@ namespace CUDFTools {
     , install_(*this,GRelation(1),GRelation::create_full(1))
     , concretePackages_(concretePackages)
     , virtualPackages_(0)
-    , deps0_(2), confs0_(2), provs0_(2), install0_(1), virtuals_(1)
+    , deps0_(2), confs0_(2), provs0_(2), install0_(1), virtuals_(1), installed_(1)
   {}
 
   ParanoidSolver::ParanoidSolver(bool share, ParanoidSolver& other)
@@ -26,6 +27,7 @@ namespace CUDFTools {
     , deps0_(other.deps0_), confs0_(other.confs0_)
     , provs0_(other.provs0_), install0_(other.install0_)
     , virtuals_(other.virtuals_)
+    , installed_(other.installed_)
   {
     deps_.update(*this,share,other.deps_);
     provides_.update(*this,share,other.provides_);
@@ -62,9 +64,17 @@ namespace CUDFTools {
     dependencies(*this,install_,deps_);
     conflicts(*this,install_,conflicts_);
   }
+  
+  void ParanoidSolver::installedPackages(const vector<int>& inst) {
+    for (int p : inst)
+      installed_.add(Tuple({p}));
+    cout << "readed " << installed_.cardinality() 
+         << " installed package for heuristic" << endl;
+  }
 
   void ParanoidSolver::setBrancher(void) {
-    stableProvides(*this,install_,provides_); 
+    //stableProvides(*this,install_,provides_); 
+    minimalChanges(*this,install_,provides_,installed_);
   }
   
   void ParanoidSolver::print(std::ostream& os) const {
@@ -108,7 +118,7 @@ namespace CUDFTools {
          << endl;
   }
 
-  vector<int> ParanoidSolver::installedPackages(void) const {
+  vector<int> ParanoidSolver::solverInstalledPackages(void) const {
     vector<int> current;
     current.reserve(install_.glb().cardinality());
     GRelation i(install_.glb());

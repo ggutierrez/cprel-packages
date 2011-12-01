@@ -32,9 +32,7 @@ Paranoid::~Paranoid(void) {
   delete solver_;
 }
 
-void Paranoid::objective(void) {
-    
-}
+void Paranoid::objective(void) {}
 
 vector<int> Paranoid::toPackageIds(const vector<CUDFVersionedPackage*>& disj) {
   vector<int> r;
@@ -143,6 +141,16 @@ void Paranoid::solutionInfo(ostream& os, const CUDFTools::ParanoidSolver& sol) c
   */
 }
 
+vector<int> Paranoid::installedInInput(void) {
+  auto installed = installedPackages();
+  vector<int> r;
+  r.reserve(installed.size());
+
+  for (CUDFVersionedPackage *p : installed)
+    r.push_back(rank(p));
+  return r;
+}
+
 void Paranoid::solutionStats(ostream& os, const CUDFTools::ParanoidSolver& sol) const {
   // get the number of packages that where removed and installed
   int installed = 0, removed = 0;
@@ -162,7 +170,13 @@ void Paranoid::solutionStats(ostream& os, const CUDFTools::ParanoidSolver& sol) 
 }
 
 void Paranoid::solve(void) {
+  // set the objective function
   objective();
+  // set the branching strategy and the information for the heuristic
+  {
+    vector<int> installed = installedInInput();
+    solver_->installedPackages(installed);
+  }
   solver_->setBrancher();
 
   //BAB<CUDFTools::ParanoidSolver> e(solver_);

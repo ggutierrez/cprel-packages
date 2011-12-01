@@ -37,6 +37,8 @@ namespace CUDFTools {
     GRelation install0_;
     /// A relation to keep the virtual packages
     GRelation virtuals_;
+    /// Relation containing the installed packages
+    GRelation installed_;
   public:
   /// Constructor
   ParanoidSolver(int concretePackages);
@@ -71,8 +73,10 @@ namespace CUDFTools {
     void virtualsInstalled(void) const;
     void setBrancher(void);
     void problemInfo(void) const;
-  /// Returns the packages that are currently installed by the solver
-    vector<int> installedPackages(void) const;
+    /// Sets the installed_ relation
+    void installedPackages(const vector<int>& inst);
+    /// Return the packages that are currently installed by the solver
+    vector<int> solverInstalledPackages(void) const;
     void knownProviders(int p) const;  
 };
 
