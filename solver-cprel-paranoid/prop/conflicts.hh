@@ -61,7 +61,15 @@ namespace CPRelPkg {
       }
       { // 1 Whatever is installed needs to have all its conflicts
         // removed
+        GRelation installed = inst_.glb();
+        GRelation rightConflicts = installed.timesURight(1).intersect(conflicts_.glb());
+        GRelation rightPackages = rightConflicts.project(1);
+        GECODE_ME_CHECK(inst_.exclude(home,rightPackages));
 
+        GRelation leftConflicts = installed.timesULeft(1).intersect(conflicts_.glb());
+        GRelation leftPackages = leftConflicts.shiftRight(1);
+        GECODE_ME_CHECK(inst_.exclude(home,leftPackages));
+        
       }
       if (inst_.assigned() && conflicts_.assigned())
 	return home.ES_SUBSUMED(*this);
