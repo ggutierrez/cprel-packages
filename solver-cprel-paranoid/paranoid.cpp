@@ -233,8 +233,8 @@ int main(int argc, char *argv[]) {
   }
   
   Paranoid model(argv[1]);
-  vector<int> s = Paranoid::readSolution(sol);
-  model.postSolution(s);
+  // vector<int> s = Paranoid::readSolution(sol);
+  // model.postSolution(s);
   model.problemInfo();
   model.solve();
   return 0;

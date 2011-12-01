@@ -63,7 +63,7 @@ namespace CPRelPkg {
       return Gecode::PropCost::ternary(Gecode::PropCost::HI);
     }
     /// Main propagation algorithm
-    virtual Gecode::ExecStatus propagate(Space& home, const Gecode::ModEventDelta& med)  {
+    virtual Gecode::ExecStatus propagate(Space& home, const Gecode::ModEventDelta&)  {
       using namespace Gecode;
 
       {
