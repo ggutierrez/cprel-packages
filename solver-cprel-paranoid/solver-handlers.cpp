@@ -47,6 +47,9 @@ namespace CUDFTools {
   void ParanoidSolver::install(int p) {
     Tuple t({p});
     install0_.add(t);
+    // I do not like this call to the constraint in this function but
+    // at the time the variable domain is created this information is
+    // not available.
     include(*this,install_,install0_);
   }
 }

@@ -31,10 +31,11 @@ Paranoid::Paranoid(const char* cudf)
 Paranoid::~Paranoid(void) {
   delete solver_;
 }
+
 void Paranoid::objective(void) {
     
 }
-/// Transforms the disjunction of packages \a disj into packages identifiers
+
 vector<int> Paranoid::toPackageIds(const vector<CUDFVersionedPackage*>& disj) {
   vector<int> r;
   r.reserve(disj.size());
@@ -44,15 +45,15 @@ vector<int> Paranoid::toPackageIds(const vector<CUDFVersionedPackage*>& disj) {
     
   return r;
 }
-/// Returns the package identifier of \a p
+
 int Paranoid::toPackageId(CUDFVersionedPackage *p) const  {
   return rank(p);
 }
-/// Transform \a disj into a cannonical form
+
 void Paranoid::makeCanonic(vector<int>& disj) {
   std::sort(std::begin(disj),std::end(disj));
 }
-/// Returns a  key for the canonic version of \a disj
+
 string Paranoid::makeKey(vector<int>& disj) {
   makeCanonic(disj);
   string key;
@@ -61,14 +62,7 @@ string Paranoid::makeKey(vector<int>& disj) {
     ss << p;
   return ss.str();
 }
-/**
- * \brief Handle the disjunction \a disj.
- *
- * If an equivalent disjunctio has been already added then this
- * method returns the index of the virtual package corresponding to
- * it. Otherwise it creates, registers and return a new virtual
- * package.
- */
+
 int Paranoid::lookUpOrAdd(vector<int>& disj) {
   string key(makeKey(disj));
   auto f = definedDisj_.find(key);
@@ -83,8 +77,6 @@ int Paranoid::lookUpOrAdd(vector<int>& disj) {
   return vp;
 }
 
-/// Add a dependency between package \a p on one of the packages in
-/// \a disj
 void Paranoid::depend(CUDFVersionedPackage *p, const vector<CUDFVersionedPackage*>& disj) {
     
   // convert the disjuntion into package identifiers
@@ -98,7 +90,7 @@ void Paranoid::depend(CUDFVersionedPackage *p, const vector<CUDFVersionedPackage
   int disjId = lookUpOrAdd(d);
   solver_->dependOnVirtual(toPackageId(p),disjId);
 }
-/// Add a conflict between package \a p and package \a q
+
 void Paranoid::conflict(CUDFVersionedPackage *p, CUDFVersionedPackage *q) {
   solver_->conflict(rank(p), rank(q));
   if (foundInstalled(p) && foundInstalled(q)) {
@@ -106,11 +98,11 @@ void Paranoid::conflict(CUDFVersionedPackage *p, CUDFVersionedPackage *q) {
     //cout << "Existent conflict " << versionedName(p) << " with " << versionedName(q) << std::endl;
   }
 }
-/// Handle keep constraint \a kcst for package \a p with impact \a pkgs
+
 void Paranoid::keep(int , CUDFVersionedPackage *, const vector<CUDFVersionedPackage*>&) {
     
 }
-/// Handle the installation of one of the packages in \a disj
+
 void Paranoid::install(const vector<CUDFVersionedPackage*>& disj) {
   // convert the disjuntion into package identifiers
   vector<int> d = toPackageIds(disj);
@@ -128,6 +120,7 @@ void Paranoid::install(const vector<CUDFVersionedPackage*>& disj) {
   //
   request_[disjId] = disj;
 }
+
 void Paranoid::solutionInfo(ostream& os, const CUDFTools::ParanoidSolver& sol) const {
   // information about the packages in the request
   for (auto& r : request_) {
@@ -149,6 +142,7 @@ void Paranoid::solutionInfo(ostream& os, const CUDFTools::ParanoidSolver& sol) c
   }
   */
 }
+
 void Paranoid::solutionStats(ostream& os, const CUDFTools::ParanoidSolver& sol) const {
   // get the number of packages that where removed and installed
   int installed = 0, removed = 0;
@@ -166,6 +160,7 @@ void Paranoid::solutionStats(ostream& os, const CUDFTools::ParanoidSolver& sol) 
      << "Removed: " << removed << endl
      << "Optimization: " << sol.optimization() << endl;
 }
+
 void Paranoid::solve(void) {
   objective();
   solver_->setBrancher();
@@ -185,10 +180,7 @@ void Paranoid::solve(void) {
     delete s;
   }    
 }
-/**
- * \brief Read a solution to the current problem from \a sol and
- * returnes it
- */
+
 vector<int> Paranoid::readSolution(std::istream& sol) {
   vector<int> s;
   string line;
@@ -205,16 +197,13 @@ vector<int> Paranoid::readSolution(std::istream& sol) {
   }
   return s;
 }
-/**
- * \brief Post solution
- *
- * Takes all the packages in \a sol and ask the solver to install them.
- */
+
 void Paranoid::postSolution(const std::vector<int>& sol) {
   for (auto p = begin(sol); p != end(sol); ++p) {
     solver_->install({*p});
   }
 }
+
 void Paranoid::problemInfo(void) const {
   solver_->problemInfo();
 }

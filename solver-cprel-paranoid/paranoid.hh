@@ -32,10 +32,10 @@ public:
   Paranoid(const Paranoid&) = delete;
   Paranoid& operator = (const Paranoid&) = delete;
   /// Constructor from a input specification in \a cudf
-
   Paranoid(const char* cudf);
   /// Destructor
   virtual ~Paranoid(void);
+
   void objective(void);
   /// Transforms the disjunction of packages \a disj into packages identifiers
   vector<int> toPackageIds(const vector<CUDFVersionedPackage*>& disj);
@@ -67,6 +67,8 @@ public:
   void solutionInfo(ostream& os, const CUDFTools::ParanoidSolver& sol) const;
   void solutionStats(ostream& os, const CUDFTools::ParanoidSolver& sol) const;
   void solve(void);
+  /// Returns the packages that are installed in the input
+  vector<int> installedInInput(void);
   /**
    * \brief Read a solution to the current problem from \a sol and
    * returnes it
