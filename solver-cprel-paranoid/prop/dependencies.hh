@@ -69,6 +69,13 @@ namespace CPRelPkg {
         GRelation pkgsNeeded = depsNeeded.project(1);
         GECODE_ME_CHECK(inst_.include(home,pkgsNeeded));
       }
+      { // 2 Any dependency in a package that cannot be installed is
+        // impossible to fulfill therfore the dependendant package
+        // becomes uninstallable.
+        GRelation cannotFulfill = inst_.oob().timesULeft(1).intersect(dependencies_.glb());
+        GRelation cannotInstall = cannotFulfill.shiftRight(1);
+        GECODE_ME_CHECK(inst_.exclude(home,cannotInstall));
+      }
       if (inst_.assigned() && dependencies_.assigned())
 	return home.ES_SUBSUMED(*this);
       return Gecode::ES_NOFIX;
