@@ -66,7 +66,10 @@ public:
   virtual void install(const vector<CUDFVersionedPackage*>& disj);
   void solutionInfo(ostream& os, const CUDFTools::ParanoidSolver& sol) const;
   void solutionStats(ostream& os, const CUDFTools::ParanoidSolver& sol) const;
-  void solve(void);
+  void solverInit(const vector<int>& solution);
+  void solverInit(void);
+  // Solve the problem by finding at most \a request solutions
+  void solve(int request);
   /// Returns the packages that are installed in the input
   vector<int> installedInInput(void);
   /**

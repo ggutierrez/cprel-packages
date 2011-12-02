@@ -138,11 +138,14 @@ add_executable(cprel-paranoid
   solver-cprel-paranoid/paranoid.cpp
   solver-cprel-paranoid/solver.cpp
   solver-cprel-paranoid/solver-handlers.cpp
-  solver-cprel-paranoid/branch/stableProvides.cpp
-  solver-cprel-paranoid/branch/minimalChanges.cpp
   solver-cprel-paranoid/prop/dependencies.cpp
   solver-cprel-paranoid/prop/provides.cpp
   solver-cprel-paranoid/prop/conflicts.cpp
+
+## Heuristics
+  solver-cprel-paranoid/branch/stableProvides.cpp
+  solver-cprel-paranoid/branch/minimalChanges.cpp
+  solver-cprel-paranoid/branch/existingInstall.cpp
 )
 target_link_libraries(cprel-paranoid 
   unsaparser 

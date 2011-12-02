@@ -169,7 +169,7 @@ void Paranoid::solutionStats(ostream& os, const CUDFTools::ParanoidSolver& sol) 
      << "Optimization: " << sol.optimization() << endl;
 }
 
-void Paranoid::solve(void) {
+void Paranoid::solverInit(void) {
   // set the objective function
   objective();
   // set the branching strategy and the information for the heuristic
@@ -177,22 +177,41 @@ void Paranoid::solve(void) {
     vector<int> installed = installedInInput();
     solver_->installedPackages(installed);
   }
-  solver_->setBrancher();
+  solver_->setBrancher();  
+}
 
+void Paranoid::solverInit(const vector<int>& solution) {
+  // set the objective function
+  objective();
+  // set the branching strategy and the information for the heuristic
+  {
+    solver_->installedPackages(solution);
+  }
+  solver_->setBrancher();  
+}
+
+void Paranoid::solve(int request) {
   //BAB<CUDFTools::ParanoidSolver> e(solver_);
   DFS<CUDFTools::ParanoidSolver> e(solver_);
   cout << "--- Search will start" << endl;
   int i = 0;
-  while (Space* s = e.next()) {
-    cout << "*** Solution(" << i++ << ")" << endl;
+  do {
+    Space *s = e.next();
+    if (s == NULL) {
+      // No solution found
+      break;
+    }
+    i++;
+       
+    cout << "*** Solution(" << i << ")" << endl;
     CUDFTools::ParanoidSolver *sol 
       = static_cast<CUDFTools::ParanoidSolver*>(s);
     solutionInfo(cout,*sol);
     solutionStats(cout,*sol);
     //static_cast<ParanoidSolver*>(s)->virtualsInstalled();
     cout << "*** Solution END ***" << endl;
-    delete s;
-  }    
+    delete s;  
+  } while(i <= request);
 }
 
 vector<int> Paranoid::readSolution(std::istream& sol) {
@@ -236,9 +255,11 @@ int main(int argc, char *argv[]) {
   }
   
   Paranoid model(argv[1]);
-  // vector<int> s = Paranoid::readSolution(sol);
-  // model.postSolution(s);
+  vector<int> s = Paranoid::readSolution(sol);
+  //model.postSolution(s);
   model.problemInfo();
-  model.solve();
+  //  model.solverInit();
+  model.solverInit(s);
+  model.solve(1);
   return 0;
 }

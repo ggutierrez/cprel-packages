@@ -57,7 +57,7 @@ namespace CPRelPkg {
       using namespace Gecode;
 
       {
-        cout << "Running dependencies propagator" << endl;
+        //cout << "Running dependencies propagator" << endl;
       }
       { // 1 Whatever is installed needs to have all its dependencies
         // installed

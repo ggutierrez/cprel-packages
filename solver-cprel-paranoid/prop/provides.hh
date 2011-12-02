@@ -67,7 +67,7 @@ namespace CPRelPkg {
       using namespace Gecode;
 
       {
-        cout << "Running provides propagator" << endl;
+        //cout << "Running provides propagator" << endl;
       }
      
       { // 1. All the packages provided by installed packages should

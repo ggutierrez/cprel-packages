@@ -57,7 +57,7 @@ namespace CPRelPkg {
       using namespace Gecode;
 
       {
-        cout << "Running conflicts propagator" << endl;
+        //cout << "Running conflicts propagator" << endl;
       }
       { // 1 Whatever is installed needs to have all its conflicts
         // removed

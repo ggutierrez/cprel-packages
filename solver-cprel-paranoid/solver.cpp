@@ -3,6 +3,8 @@
 using Gecode::Home;
 void stableProvides(Home home, CPRelVar inst, CPRelVar provides);
 void minimalChanges(Home home, CPRelVar inst, CPRelVar provides, GRelation installed);
+void existingInstall(Home home, CPRelVar inst, CPRelVar provides, GRelation installed);
+
 void provides(Space& home, CPRelVar installation, CPRelVar provides, GRelation virtuals);
 void dependencies(Space& home, CPRelVar installation, CPRelVar deps);
 void conflicts(Space& home, CPRelVar installation, CPRelVar confs);
@@ -74,7 +76,8 @@ namespace CUDFTools {
 
   void ParanoidSolver::setBrancher(void) {
     //stableProvides(*this,install_,provides_); 
-    minimalChanges(*this,install_,provides_,installed_);
+    //minimalChanges(*this,install_,provides_,installed_);
+    existingInstall(*this,install_,provides_,installed_);
   }
   
   void ParanoidSolver::print(std::ostream& os) const {
