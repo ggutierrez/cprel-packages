@@ -1,3 +1,4 @@
+#include <solver-cprel-paranoid/branch/choice.hh>
 #include <gecode/search.hh>
 #include <rel/grelation.hh> 
 #include <cprel/cprel.hh>
@@ -7,6 +8,7 @@ using MPG::CPRel::CPRelView;
 using MPG::GRelation;
 using MPG::Tuple;
 
+using CUDFTools::RelChoice;
 
 using Gecode::Space;
 using Gecode::Archive;
@@ -29,28 +31,6 @@ protected:
   CPRelView provides_;
   /// Last computed relation of needed provides
   //mutable MPG::GRelation needed_;
-  /// Simple, tuple-based relation choice
-  class RelChoice : public Choice {
-  public:
-    /// Tuple to branch on
-    Tuple t_;
-    /// Constructor
-    RelChoice(const NaiveBranch& b, const Tuple& t)
-      : Choice(b,2), t_(t) {}
-    /// Returns the size of the object
-    virtual size_t size(void) const {
-      return sizeof(*this);
-    }
-    virtual void archive(Archive& e) const {
-      Choice::archive(e);
-      std::vector<int> t(t_.value());
-      // first the arity of the tuple and then the tuple itself
-      e << t_.arity();
-      for (int i = 0; i < t_.arity(); i++) {
-        e << t[i];
-      }
-    }
-  };
 public:
   /// Constructor for a brancher on variable \a x
   NaiveBranch(Home home, CPRelView inst, CPRelView provides)
