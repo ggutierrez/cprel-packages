@@ -67,61 +67,64 @@ public:
 	return false;
       return true;
     }
-    /// Creates a choice by selecting a tuple from the unknown of the variable
-    virtual Choice* choice(Space&) {
-      // This is repeated work. We already computed this for deciding
-      // if the brancher should be still active or not. A better
-      // approach is to keep a ground relation that stores the
-      // subrelation computed at status and then to use it here.
+  
+  Tuple chooseInstalledProvider(Tuple candidate) const {
+    auto v = candidate.value();
+    int provider = v.at(0);
+    int Virtual = v.at(1);
+    
+    // Choosen contains a tuple that can be used as a
+    // provide. However this tuple might be the best if the provider
+    // is not part of the original installation.
+    
+    // make a relation out of the choosen tuple
+    GRelation candidates(2);
+    candidates.add(candidate);
+    // compute the possible ways of troviding the virtual of the
+    // relation
+    GRelation possibleProvides = candidates.project(1).timesULeft(1).intersect(provides_.lub());
+    // Out of the possible providers, find the ones that are installed
+    GRelation possibleProviders = possibleProvides.shiftRight(1);
 
-      auto possibleProvides = inst_.glb().timesULeft(1).intersect(provides_.lub());
-      auto alreadyProvided = provides_.glb().exists(1) ;      
-      auto needed_ = possibleProvides.difference(alreadyProvided);
+    //cout << ">>> Need to provide " << possibleProvides << endl;
+    
+    // this is a safety test, if one of the possible providers is
+    // already installed then it means that we are not performing
+    // enough propagation because it should have been detected by
+    // the provides constraint.
+    if (!possibleProviders.intersect(inst_.glb()).empty()) {
+      cout << " We have a big problem " << endl;
+    }
+    
+    GRelation installedCandidates = possibleProviders.intersect(installed_);
+    if (installedCandidates.empty()) {
+      // the heuristic does not applies and we keep the choosen provides
+      cout << ">>> Heuristic FAILED " << endl;
+      return candidate;
+    } else {
+      // we prefer to provide the package with the installed one
+      provider = installedCandidates.pickOneTuple().value().at(0);
+      //cout << ">>> Heuristic OK " << installedCandidates << endl
+      //     << ">>> Selecting " << provider << endl;
+      return Tuple({provider,Virtual});
+    }
+  }
 
-      // out of the ones that are needed we will choose the ones that
-      // are present in the installed_ relation.
-      Tuple choosen = needed_.pickOneTuple();
-
-      auto v = choosen.value();
-      int provider = v.at(0);
-      int Virtual = v.at(1);
-       
-      // Choosen contains a tuple that can be used as a
-      // provide. However this tuple cannot be the best if the
-      // provider is not part of the original installation.
-      {
-        // make a relation out of the choosen tuple
-        GRelation candidates(2);
-        candidates.add(choosen);
-        // compute the possible ways of troviding the virtual of the
-        // relation
-        GRelation possibleProvides = candidates.project(1).timesULeft(1).intersect(provides_.lub());
-        // Out of the possible providers, find the ones that are installed
-        GRelation possibleProviders = possibleProvides.shiftRight(1);
-
-        //cout << ">>> Need to provide " << possibleProvides << endl;
-       
-        // this is a safety test, if one of the possible providers is
-        // already installed then it means that we are not performing
-        // enough propagation because it should have been detected by
-        // the provides constraint.
-        if (!possibleProviders.intersect(inst_.glb()).empty()) {
-          cout << " We have a big problem " << endl;
-        }
-        
-        GRelation installedCandidates = possibleProviders.intersect(installed_);
-        if (installedCandidates.empty()) {
-          // the heuristic does not applies and we keep the choosen provides
-          cout << ">>> Heuristic FAILED " << endl;
-          
-        } else {
-          // we prefer to provide the package with the installed one
-          provider = installedCandidates.pickOneTuple().value().at(0);
-          //cout << ">>> Heuristic OK " << installedCandidates << endl
-          //     << ">>> Selecting " << provider << endl;
-        }
-      }
-      return new RelChoice(*this,Tuple({provider,Virtual}));
+  /// Creates a choice by selecting a tuple from the unknown of the variable
+  virtual Choice* choice(Space&) {
+    // This is repeated work. We already computed this for deciding
+    // if the brancher should be still active or not. A better
+    // approach is to keep a ground relation that stores the
+    // subrelation computed at status and then to use it here.
+    
+    auto possibleProvides = inst_.glb().timesULeft(1).intersect(provides_.lub());
+    auto alreadyProvided = provides_.glb().exists(1) ;      
+    auto needed_ = possibleProvides.difference(alreadyProvided);
+    
+    // out of the ones that are needed we will choose the ones that
+    // are present in the installed_ relation.
+    Tuple choosen = needed_.pickOneTuple();
+    return new RelChoice(*this,chooseInstalledProvider(choosen));
     }
 
     virtual Choice* choice(const Space&, Archive& e) {
