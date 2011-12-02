@@ -153,7 +153,10 @@ target_link_libraries(cprel-paranoid
   ${CPREL_LIBRARIES} 
 )
 
-
+add_executable(gview tools/graphview.cpp)
+target_link_libraries(gview
+  unsaparser 
+)
 #add_executable(statistics tools/stats.cpp)
 #target_link_libraries(statistics ${CUDF_LIB} ${KCUDF_LIB} ${CPREL_LIBRARIES} ${Boost_LIBRARIES})
 
