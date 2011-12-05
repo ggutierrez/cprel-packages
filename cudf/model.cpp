@@ -96,6 +96,12 @@ namespace CUDFTools {
     return pkg->installed;
   }
 
+  void Model::debugPackageRanks(std::ostream& os) const {
+    os << "Rank\t\t" << "Package" << endl;
+    for (CUDFVersionedPackage *p : packages())
+      os << rank(p) << "\t\t" << name(p) << endl;
+    
+  }
   // implementation of private functions to interpret the problem input
 
   void dependencies(CUDFVersionedPackage *pkg, Model& model) {

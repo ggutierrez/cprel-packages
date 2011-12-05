@@ -2,6 +2,7 @@
 #define __CPREL_PACKAGES_CUDF_MODEL_HH__
 
 #include <istream>
+#include <ostream>
 #include <vector>
 
 // forward declaration to avoid inclusion of cudf.hh
@@ -71,6 +72,14 @@ namespace CUDFTools {
      *
      */
     bool foundInstalled(const CUDFVersionedPackage *pkg) const;
+    /** 
+     * \brief Debug package information
+     *
+     * Prints in \a os the package names (with versions) and the rank
+     * assigned during parsing.
+    */
+    void debugPackageRanks(std::ostream& os) const;
   };
-}
+ } 
+
 #endif
