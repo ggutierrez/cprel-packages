@@ -30,18 +30,22 @@ protected:
   /// Provides
   CPRelView provides_;
   /// Last computed relation of needed provides
-  //mutable MPG::GRelation needed_;
+  mutable MPG::GRelation needed_;
 public:
   /// Constructor for a brancher on variable \a x
   NaiveBranch(Home home, CPRelView inst, CPRelView provides)
-    : Brancher(home), inst_(inst), provides_(provides) {}
+    : Brancher(home), inst_(inst), provides_(provides), needed_(2) {
+    
+    // needed_ attribute handles memmory outside of the space
+    home.notice(*this,Gecode::AP_DISPOSE);
+  }
     /// Brancher posting
     static void post(Home home, CPRelView inst, CPRelView provides) {
       (void) new (home) NaiveBranch(home,inst, provides);
     }
     /// Constructor for clonning
     NaiveBranch(Space& home, bool share, NaiveBranch& b)
-      : Brancher(home,share,b) {
+      : Brancher(home,share,b), needed_(2) {
       inst_.update(home,share,b.inst_);
       provides_.update(home,share,b.provides_);
     }
@@ -51,6 +55,8 @@ public:
     }
     /// Brancher disposal
     virtual size_t dispose(Space& home) {
+      needed_.~GRelation();
+      home.ignore(*this,Gecode::AP_DISPOSE);
       (void) Brancher::dispose(home);
       return sizeof(*this);
     }
@@ -60,7 +66,7 @@ public:
       auto possibleProvides = inst_.glb().timesULeft(1).intersect(provides_.lub());
       auto alreadyProvided = provides_.glb().exists(1);
       
-      auto needed_ = possibleProvides.difference(alreadyProvided);
+      needed_.become(possibleProvides.difference(alreadyProvided));
       //std::cout << "Needed provides: " << needed_ << std::endl; 
       if (needed_.empty())
 	return false;
@@ -68,14 +74,9 @@ public:
     }
     /// Creates a choice by selecting a tuple from the unknown of the variable
     virtual Choice* choice(Space&) {
-      // This is repeated work. We already computed this for deciding
-      // if the brancher should be still active or not. A better
-      // approach is to keep a ground relation that stores the
-      // subrelation computed at status and then to use it here.
-
-      auto possibleProvides = inst_.glb().timesULeft(1).intersect(provides_.lub());
-      auto alreadyProvided = provides_.glb().exists(1) ;      
-      auto needed_ = possibleProvides.difference(alreadyProvided);
+      if (needed_.empty()) {
+        cout << "There is a big problem in the stableProvides brancher " << endl;
+      }
       Tuple choosen = needed_.pickOneTuple();
 
       /*
