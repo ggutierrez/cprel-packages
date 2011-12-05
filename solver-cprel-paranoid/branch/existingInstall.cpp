@@ -63,11 +63,11 @@ public:
     }
     /// Returns the status of the brancher
     virtual bool status(const Space&) const {
-      cout << ">> Status " <<  installed_.intersect(inst_.glb()).cardinality() 
-           << " of " 
-           << inst_.glb().cardinality()
+      cout << "**> Installed size: " << installed_.cardinality() << endl;
+      cout << "**> Inst size: " << inst_.glb().cardinality() << endl;
+      cout << "**> Common with inst " <<  inst_.glb().intersect(installed_).cardinality()
            << endl;
-      if (installed_.subsetEq(inst_.glb()))
+      if (installed_.difference(inst_.glb()).empty())
         return false;
       return true;
     }
@@ -79,7 +79,7 @@ public:
     // Select one of the candidates to install
     Tuple choosen = candidates.pickOneTuple();
     return new RelChoice(*this,choosen);
-    }
+  }
 
     virtual Choice* choice(const Space&, Archive& e) {
       assert(false);

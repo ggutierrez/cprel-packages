@@ -173,7 +173,6 @@ void Paranoid::solverInit(const vector<int>& solution) {
   {
     solver_->installedPackages(solution);
   }
-
   solver_->setBrancher();  
 }
 
