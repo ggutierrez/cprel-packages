@@ -37,7 +37,7 @@ void Paranoid::objective(void) {}
 vector<int> Paranoid::toPackageIds(const vector<CUDFVersionedPackage*>& disj) {
   vector<int> r;
   r.reserve(disj.size());
-    
+  
   for (CUDFVersionedPackage *p : disj)
     r.push_back(rank(p));
     
@@ -68,7 +68,7 @@ int Paranoid::lookUpOrAdd(vector<int>& disj) {
     // a disjunction like this already exists.
     return f->second;;
   }
-    
+  
   // Create the disjunction in the solver
   int vp = solver_->createVirtual(disj);
   definedDisj_[key] = vp;
@@ -76,15 +76,15 @@ int Paranoid::lookUpOrAdd(vector<int>& disj) {
 }
 
 void Paranoid::depend(CUDFVersionedPackage *p, const vector<CUDFVersionedPackage*>& disj) {
-    
+  
   // convert the disjuntion into package identifiers
   vector<int> d = toPackageIds(disj);
-
+  
   if (disj.size() == 1) {
     solver_->depend(toPackageId(p), d);
     return;
   }
-    
+  
   int disjId = lookUpOrAdd(d);
   solver_->dependOnVirtual(toPackageId(p),disjId);
 }
@@ -98,7 +98,7 @@ void Paranoid::conflict(CUDFVersionedPackage *p, CUDFVersionedPackage *q) {
 }
 
 void Paranoid::keep(int , CUDFVersionedPackage *, const vector<CUDFVersionedPackage*>&) {
-    
+  
 }
 
 void Paranoid::install(const vector<CUDFVersionedPackage*>& disj) {
@@ -124,24 +124,10 @@ void Paranoid::solutionInfo(ostream& os, const CUDFTools::ParanoidSolver& sol) c
   for (auto& r : request_) {
     os << "Package " << r.first << "(" <<  r.second.size() << ")" << endl;
     sol.knownProviders(r.first);
-    /*
-    for (CUDFVersionedPackage *p : r.second) {
-      if (sol.packageInstalled(rank(p))) {
-          os << "\t" << rank(p) << endl;
-      }
-    }
-    */
   }
-  // information about all the package
-  /*
-  vector<int> installed = sol.installedPackages();
-  for (int p : installed) {
-    os << "Package installed " << p << endl;
-  }
-  */
 }
 
-vector<int> Paranoid::installedInInput(void) {
+  vector<int> Paranoid::installedInInput(void) {
   auto installed = installedPackages();
   vector<int> r;
   r.reserve(installed.size());
@@ -187,6 +173,7 @@ void Paranoid::solverInit(const vector<int>& solution) {
   {
     solver_->installedPackages(solution);
   }
+
   solver_->setBrancher();  
 }
 
@@ -211,7 +198,7 @@ void Paranoid::solve(int request) {
     //static_cast<ParanoidSolver*>(s)->virtualsInstalled();
     cout << "*** Solution END ***" << endl;
     delete s;  
-  } while(i <= request);
+  } while(i < request);
 }
 
 vector<int> Paranoid::readSolution(std::istream& sol) {
@@ -232,9 +219,19 @@ vector<int> Paranoid::readSolution(std::istream& sol) {
 }
 
 void Paranoid::postSolution(const std::vector<int>& sol) {
+
+  { // Add part of the installed packages
+    for (int p : sol) {
+      if (p != 3219)
+        solver_->install(p);
+    }
+    cout << "Initialized " << endl;
+  }
+  /*
   for (auto p = begin(sol); p != end(sol); ++p) {
     solver_->install({*p});
   }
+  */
 }
 
 void Paranoid::problemInfo(void) const {
@@ -255,9 +252,17 @@ int main(int argc, char *argv[]) {
   }
   
   Paranoid model(argv[1]);
+  model.debugPackageRanks(cout);
+
   vector<int> s = Paranoid::readSolution(sol);
-  //model.postSolution(s);
-  model.problemInfo();
+
+  // cout << "Solution: " << endl;
+  // for (int p : s) {
+  //   cout << "Package installed: " << p << endl;
+  // }
+
+  model.postSolution(s);
+  //model.problemInfo();
   //  model.solverInit();
   model.solverInit(s);
   model.solve(1);
