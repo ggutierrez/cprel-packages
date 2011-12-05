@@ -220,18 +220,10 @@ vector<int> Paranoid::readSolution(std::istream& sol) {
 
 void Paranoid::postSolution(const std::vector<int>& sol) {
 
-  { // Add part of the installed packages
-    for (int p : sol) {
-      if (p != 3219)
-        solver_->install(p);
-    }
-    cout << "Initialized " << endl;
+  for (int p : sol) {
+    solver_->install(p);
   }
-  /*
-  for (auto p = begin(sol); p != end(sol); ++p) {
-    solver_->install({*p});
-  }
-  */
+  cout << "(M)Posted solution" << endl;
 }
 
 void Paranoid::problemInfo(void) const {
@@ -261,7 +253,7 @@ int main(int argc, char *argv[]) {
   //   cout << "Package installed: " << p << endl;
   // }
 
-  model.postSolution(s);
+  //model.postSolution(s);
   //model.problemInfo();
   //  model.solverInit();
   model.solverInit(s);
