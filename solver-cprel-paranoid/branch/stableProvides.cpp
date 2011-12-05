@@ -23,7 +23,7 @@ using Gecode::ES_OK;
  * \brief Simple and naive brancher based on tuple inclusion and exclusion.
  * \ingroup RelBranch
  */
-class NaiveBranch : public Brancher {
+class StableProvides : public Brancher {
 protected:
   /// Installation
   CPRelView inst_;
@@ -33,25 +33,29 @@ protected:
   mutable MPG::GRelation needed_;
 public:
   /// Constructor for a brancher on variable \a x
-  NaiveBranch(Home home, CPRelView inst, CPRelView provides)
+  StableProvides(Home home, CPRelView inst, CPRelView provides)
     : Brancher(home), inst_(inst), provides_(provides), needed_(2) {
-    
     // needed_ attribute handles memmory outside of the space
     home.notice(*this,Gecode::AP_DISPOSE);
   }
     /// Brancher posting
     static void post(Home home, CPRelView inst, CPRelView provides) {
-      (void) new (home) NaiveBranch(home,inst, provides);
+      (void) new (home) StableProvides(home,inst, provides);
     }
     /// Constructor for clonning
-    NaiveBranch(Space& home, bool share, NaiveBranch& b)
+    StableProvides(Space& home, bool share, StableProvides& b)
       : Brancher(home,share,b), needed_(2) {
+      // The needed_ attribute is only optimization. It avoid to keep
+      // the result in the status method and to use it to create the
+      // choice without having to recompute it again. In every call to
+      // the copy constructor this relation is initialized emtpy.
+
       inst_.update(home,share,b.inst_);
       provides_.update(home,share,b.provides_);
     }
     /// Brancher copying
     virtual Brancher* copy(Space& home, bool share) {
-      return new (home) NaiveBranch(home,share,*this);
+      return new (home) StableProvides(home,share,*this);
     }
     /// Brancher disposal
     virtual size_t dispose(Space& home) {
@@ -78,15 +82,6 @@ public:
         cout << "There is a big problem in the stableProvides brancher " << endl;
       }
       Tuple choosen = needed_.pickOneTuple();
-
-      /*
-      auto value = choosen.value();
-      if (value.at(0) == value.at(1))
-	std::cerr << "Bad choice!!! " << choosen << std::endl; 
-      */
-      // the choosen tuple cannot represent a concrete package
-      // providing itself.
-
 
       return new RelChoice(*this,choosen);
     }
@@ -128,6 +123,6 @@ public:
    */
   void stableProvides(Home home, CPRelVar inst, CPRelVar provides) {
     if (home.failed()) return;
-    NaiveBranch::post(home,inst,provides);
+    StableProvides::post(home,inst,provides);
   }
 
