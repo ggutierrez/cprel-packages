@@ -26,6 +26,10 @@ namespace CPRelPkg {
       : Gecode::Propagator(home), inst_(inst), provides_(dep), virtuals_(virtuals) {
       inst_.subscribe(home,*this,MPG::CPRel::PC_CPREL_BND);
       provides_.subscribe(home,*this,MPG::CPRel::PC_CPREL_BND);
+      // virtuals_ member uses memmory that is not managed in the
+      // gecode heap but externally. This propagator needs to release
+      // that and therfore we need to tell that to the space.
+      home.notice(*this,Gecode::AP_DISPOSE);
     }
     /// Propagator posting
     static Gecode::ExecStatus post(Home home, CPRelView inst,  CPRelView dep, GRelation virtuals) {
@@ -36,8 +40,9 @@ namespace CPRelPkg {
     virtual size_t dispose(Gecode::Space& home) {
       inst_.cancel(home,*this,MPG::CPRel::PC_CPREL_BND);
       provides_.cancel(home,*this,MPG::CPRel::PC_CPREL_BND);
-      // what should i do with virtuals here???
-    
+      // Memmory management for virtuals.
+      virtuals_.~GRelation();
+      home.ignore(*this,Gecode::AP_DISPOSE);
       (void) Propagator::dispose(home);
       return sizeof(*this);
     }

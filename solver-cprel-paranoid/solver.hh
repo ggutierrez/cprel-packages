@@ -44,6 +44,8 @@ namespace CUDFTools {
   ParanoidSolver(int concretePackages);
   /// Copy constructor
   ParanoidSolver(bool share, ParanoidSolver& other);
+    /// Destructor
+    virtual ~ParanoidSolver(void);
     /// Copy
     Space* copy(bool share);
     /// Constraint variable initialization

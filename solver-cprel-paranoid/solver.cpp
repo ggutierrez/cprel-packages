@@ -40,7 +40,9 @@ namespace CUDFTools {
   Space* ParanoidSolver::copy(bool share) {
     return new ParanoidSolver(share,*this);
   }
- 
+
+  ParanoidSolver::~ParanoidSolver(void) {}
+
   void ParanoidSolver::constrain(const Space& sol_) {
     
   }
@@ -75,9 +77,9 @@ namespace CUDFTools {
   }
 
   void ParanoidSolver::setBrancher(void) {
-    //stableProvides(*this,install_,provides_); 
+    stableProvides(*this,install_,provides_); 
     //minimalChanges(*this,install_,provides_,installed_);
-    existingInstall(*this,install_,provides_,installed_);
+    //existingInstall(*this,install_,provides_,installed_);
   }
   
   void ParanoidSolver::print(std::ostream& os) const {
