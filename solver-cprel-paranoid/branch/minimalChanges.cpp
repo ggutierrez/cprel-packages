@@ -35,7 +35,11 @@ protected:
 public:
   /// Constructor for a brancher on variable \a x
   MinimalChanges(Home home, CPRelView inst, CPRelView provides, GRelation installed)
-    : Brancher(home), inst_(inst), provides_(provides), installed_(installed) {}
+    : Brancher(home), inst_(inst), provides_(provides), installed_(installed) {
+  
+    // The memory of the installed_ relation is outside the gecode heap.
+    home.notice(*this,Gecode::AP_DISPOSE);
+  }
     /// Brancher posting
     static void post(Home home, CPRelView inst, CPRelView provides, GRelation installed) {
       (void) new (home) MinimalChanges(home,inst, provides, installed);
@@ -52,6 +56,8 @@ public:
     }
     /// Brancher disposal
     virtual size_t dispose(Space& home) {
+      installed_.~GRelation();
+      home.ignore(*this,Gecode::AP_DISPOSE);
       (void) Brancher::dispose(home);
       return sizeof(*this);
     }
