@@ -60,18 +60,18 @@ namespace CUDFTools {
     void print(std::ostream& os) const;
     /// Post a dependency between a package and a virtual package
     void dependOnVirtual(int p, int q);
-  /// Creates a virtual package in the solver that can be provided by
-  /// any package in \a disj
+    /// Creates a virtual package in the solver that can be provided by
+    /// any package in \a disj
     int createVirtual(const vector<int>& disj);
-  /// Post a constraint stating that p depends on any in disj
+    /// Post a constraint stating that p depends on any in disj
     void depend(int p, const vector<int>& disj);
-  /// Post the constraint that p conflicts with q
+    /// Post the constraint that p conflicts with q
     void conflict(int p, int q);
     void install(int p);
     void setOptimize(const vector<int>& coeff);
-  /// Returns the status (true: installed, false otherwise) of a package in the solver
+    /// Returns the status (true: installed, false otherwise) of a package in the solver
     bool packageInstalled(int p) const;
-  /// Prints the virtuals that got installed at the end of the solving
+    /// Prints the virtuals that got installed at the end of the solving
     void virtualsInstalled(void) const;
     void setBrancher(void);
     void problemInfo(void) const;

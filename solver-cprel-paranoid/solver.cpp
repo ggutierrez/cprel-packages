@@ -77,9 +77,9 @@ namespace CUDFTools {
   }
 
   void ParanoidSolver::setBrancher(void) {
-    stableProvides(*this,install_,provides_); 
+    //stableProvides(*this,install_,provides_); 
     //minimalChanges(*this,install_,provides_,installed_);
-    //existingInstall(*this,install_,provides_,installed_);
+    existingInstall(*this,install_,provides_,installed_);
   }
   
   void ParanoidSolver::print(std::ostream& os) const {
@@ -92,7 +92,6 @@ namespace CUDFTools {
   int ParanoidSolver::optimization(void) const {
     return 0;
   }
-
 
   bool ParanoidSolver::packageInstalled(int p) const {
     GRelation r(1);
