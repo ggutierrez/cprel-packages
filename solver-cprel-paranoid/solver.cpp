@@ -1,9 +1,6 @@
 #include <solver-cprel-paranoid/solver.hh>
 
 using Gecode::Home;
-void stableProvides(Home home, CPRelVar inst, CPRelVar provides);
-void minimalChanges(Home home, CPRelVar inst, CPRelVar provides, GRelation installed);
-void existingInstall(Home home, CPRelVar inst, CPRelVar provides, GRelation installed);
 
 void provides(Space& home, CPRelVar installation, CPRelVar provides, GRelation virtuals);
 void dependencies(Space& home, CPRelVar installation, CPRelVar deps);
@@ -18,7 +15,9 @@ namespace CUDFTools {
     , install_(*this,GRelation(1),GRelation::create_full(1))
     , concretePackages_(concretePackages)
     , virtualPackages_(0)
-    , deps0_(2), confs0_(2), provs0_(2), install0_(1), virtuals_(1), installed_(1)
+    , deps0_(2), confs0_(2), provs0_(2), install0_(1)
+    , virtuals_(1), installed_(1)
+    , allRelations_(nullptr)      
   {}
 
   ParanoidSolver::ParanoidSolver(bool share, ParanoidSolver& other)
@@ -30,6 +29,7 @@ namespace CUDFTools {
     , provs0_(other.provs0_), install0_(other.install0_)
     , virtuals_(other.virtuals_)
     , installed_(other.installed_)
+    , allRelations_(other.allRelations_)
   {
     deps_.update(*this,share,other.deps_);
     provides_.update(*this,share,other.provides_);
@@ -41,10 +41,8 @@ namespace CUDFTools {
     return new ParanoidSolver(share,*this);
   }
 
-  ParanoidSolver::~ParanoidSolver(void) {}
-
-  void ParanoidSolver::constrain(const Space& sol_) {
-    
+  ParanoidSolver::~ParanoidSolver(void) {
+    delete allRelations_;
   }
 
   void ParanoidSolver::initVariables(void) {
@@ -69,28 +67,8 @@ namespace CUDFTools {
     conflicts(*this,install_,conflicts_);
   }
   
-  void ParanoidSolver::installedPackages(const vector<int>& inst) {
-    for (int p : inst)
-      installed_.add(Tuple({p}));
-    cout << "readed " << installed_.cardinality() 
-         << " installed package for heuristic" << endl;
-  }
-
-  void ParanoidSolver::setBrancher(void) {
-    //stableProvides(*this,install_,provides_); 
-    //minimalChanges(*this,install_,provides_,installed_);
-    existingInstall(*this,install_,provides_,installed_);
-  }
-  
   void ParanoidSolver::print(std::ostream& os) const {
     (void)os;
-  }
-  void ParanoidSolver::setOptimize(const vector<int>& coeff) {
-    (void) coeff;
-  }
-
-  int ParanoidSolver::optimization(void) const {
-    return 0;
   }
 
   bool ParanoidSolver::packageInstalled(int p) const {

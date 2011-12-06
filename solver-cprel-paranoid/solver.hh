@@ -39,6 +39,8 @@ namespace CUDFTools {
     GRelation virtuals_;
     /// Relation containing the installed packages
     GRelation installed_;
+    /// A graph to represent all the relations alltogether
+    vector<vector<int>> *allRelations_;
   public:
   /// Constructor
   ParanoidSolver(int concretePackages);
