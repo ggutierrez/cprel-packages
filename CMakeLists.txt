@@ -148,6 +148,7 @@ add_executable(cprel-paranoid
   solver-cprel-paranoid/branch/stableProvides.cpp
   solver-cprel-paranoid/branch/minimalChanges.cpp
   solver-cprel-paranoid/branch/existingInstall.cpp
+  solver-cprel-paranoid/branch/existingInstallGraph.cpp
 )
 target_link_libraries(cprel-paranoid 
   unsaparser 

@@ -5,7 +5,9 @@ using Gecode::Home;
 void stableProvides(Home home, CPRelVar inst, CPRelVar provides);
 void minimalChanges(Home home, CPRelVar inst, CPRelVar provides, GRelation installed);
 void existingInstall(Home home, CPRelVar inst, CPRelVar provides, GRelation installed);
-
+void existingInstallDegree(Home home, CPRelVar inst, CPRelVar provides, 
+                           GRelation installed, 
+                           const std::shared_ptr<vector<vector<int>>> allRelations);
 
 namespace CUDFTools {  
   void ParanoidSolver::installedPackages(const vector<int>& inst) {
@@ -18,6 +20,7 @@ namespace CUDFTools {
   void ParanoidSolver::setBrancher(void) {
     //stableProvides(*this,install_,provides_); 
     //minimalChanges(*this,install_,provides_,installed_);
-    existingInstall(*this,install_,provides_,installed_);
+    //existingInstall(*this,install_,provides_,installed_);
+    existingInstallDegree(*this,install_,provides_,installed_,allRelations_);
   }
 }

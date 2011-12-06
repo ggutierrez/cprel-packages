@@ -1,3 +1,4 @@
+#include <boost/graph/vector_as_graph.hpp>
 #include <solver-cprel-paranoid/solver.hh>
 
 using Gecode::Home;
@@ -17,7 +18,7 @@ namespace CUDFTools {
     , virtualPackages_(0)
     , deps0_(2), confs0_(2), provs0_(2), install0_(1)
     , virtuals_(1), installed_(1)
-    , allRelations_(nullptr)      
+    , allRelations_(new vector<vector<int>>(concretePackages_))      
   {}
 
   ParanoidSolver::ParanoidSolver(bool share, ParanoidSolver& other)
@@ -41,9 +42,7 @@ namespace CUDFTools {
     return new ParanoidSolver(share,*this);
   }
 
-  ParanoidSolver::~ParanoidSolver(void) {
-    delete allRelations_;
-  }
+  ParanoidSolver::~ParanoidSolver(void) {}
 
   void ParanoidSolver::initVariables(void) {
     include(*this,deps_,deps0_);

@@ -4,6 +4,8 @@ namespace CUDFTools {
 
   void ParanoidSolver::dependOnVirtual(int p, int q) {
     deps0_.add(Tuple({p,q}));
+    // add the dependency to the graph
+    (*allRelations_)[p].push_back(q);
   }
 
   int ParanoidSolver::createVirtual(const vector<int>& disj) {
@@ -31,17 +33,30 @@ namespace CUDFTools {
     // add the new virtual package to the virtuals_ relation
     virtuals_.add(Tuple({nextVirtual}));
 
+    // add the new virtual to the graph
+    if (static_cast<unsigned int>(nextVirtual) != allRelations_->size()) {
+      cout << "We have a big problem" << endl;
+      exit(0);
+    } else {
+      allRelations_->push_back({});
+    }
     return nextVirtual;
   }
 
   void ParanoidSolver::depend(int p, const vector<int>& disj) {
     if (disj.size() != 1)
       cout << "Ouch, fix me!" << endl;
-    deps0_.add(Tuple({p,disj.at(0)}));
+    int q = disj.at(0);
+    deps0_.add(Tuple({p,q}));
+    // add the dependency to the graph
+    (*allRelations_)[p].push_back(q);
   }
 
   void ParanoidSolver::conflict(int p, int q) {
     confs0_.add(Tuple({p,q}));
+    // add the conflict to the graph
+    (*allRelations_)[p].push_back(q);
+    (*allRelations_)[q].push_back(p);
   }
 
   void ParanoidSolver::install(int p) {
