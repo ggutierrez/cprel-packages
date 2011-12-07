@@ -18,13 +18,13 @@ void create() {
 
   // node labels
   libgexf::Data& data = gexf->getData();
-  //data.setLabel("0", "Hello");
-  //data.setLabel("1", "world");
+  data.setNodeLabel("0", "Hello");
+  data.setNodeLabel("1", "world");
 
   // attributes
-  //  data.addNodeAttributeColumn("0", "foo", libgexf::BOOLEAN);
-  //data.setNodeAttributeDefault("0", "false");
-  //data.setNodeValue("1", "0", "true");
+  data.addNodeAttributeColumn("0", "foo", "boolean");
+  data.setNodeAttributeDefault("0", "false");
+  data.setNodeValue("1", "0", "true");
 
   // meta data
   libgexf::MetaData& meta = gexf->getMetaData();
