@@ -78,8 +78,8 @@ include_directories(CPREL_INCLUDE_DIR)
 ##########################################################################
 include_directories(${CMAKE_SOURCE_DIR})
 
-# The visualizer
-add_subdirectory(gephi)
+# The visualizer library
+add_subdirectory(libgexf)
 # The unsa parser
 add_subdirectory(cudf)
 # The paranoid solver (cprel)
@@ -88,10 +88,10 @@ add_subdirectory(solver-cprel-paranoid)
 add_subdirectory(solver-cpint-paranoid)
 # The paranoid solver (lp)
 add_subdirectory(solver-lp-paranoid)
+# Misc tools
+add_subdirectory(tools)
 
 ## Temporal, should be removed adter
-#add_executable(statistics tools/stats.cpp)
-#target_link_libraries(statistics ${CUDF_LIB} ${KCUDF_LIB} ${CPREL_LIBRARIES} ${Boost_LIBRARIES})
 
 #add_library(cprelsolver 
 #  solver/solver.cpp

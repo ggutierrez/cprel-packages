@@ -10,7 +10,7 @@ else()
   message(FATAL_ERROR "libxml2 library is required")
 endif()
 
-include_directories(${CMAKE_SOURCE_DIR}/gephi)
+include_directories(${CMAKE_SOURCE_DIR}/libgexf)
 
 set(GEXF_HDRS
 libgexf/abstractiter.h    libgexf/conv.h            libgexf/edgeiter.h        libgexf/gexf.h            libgexf/legacywriter.h    libgexf/nodeiter.h        libgexf/undirectedgraph.h libgexf/abstractparser.h  libgexf/data.h            libgexf/exceptions.h      libgexf/gexfparser.h      libgexf/libgexf.h   libgexf/rngvalidator.h libgexf/attributeiter.h   libgexf/directedgraph.h   libgexf/filereader.h libgexf/graph.h           libgexf/memoryvalidator.h libgexf/schemavalidator.h libgexf/attvalueiter.h libgexf/dynamicgraph.h    libgexf/filewriter.h      libgexf/legacyparser.h    libgexf/metadata.h  libgexf/typedefs.h
