@@ -72,94 +72,24 @@ include_directories(GECODE_INCLUDE_DIR)
 ##########################################################################
 find_package(CPRel REQUIRED)
 include_directories(CPREL_INCLUDE_DIR)
-##########################################################################
-# Cudf
-##########################################################################
-find_library(CUDF_LIB cudfparser)
-if(CUDF_LIB) 
-  message(STATUS "Using cudf library from: ${CUDF_LIB}")
-else()
-  message(FATAL_ERROR "cudf library is required")
-endif()
-##########################################################################
-# Kcudf
-##########################################################################
-find_library(KCUDF_LIB kcudf)
-find_path(KCUDF_HDR kcudf/cudf.hh)
-if(KCUDF_LIB AND KCUDF_HDR)
-  message(STATUS "Using libkcudf from: ${KCUDF_LIB}")
-else()
-  message(FATAL_ERROR "Libkcudf is needed to build this project")
-endif()
-##########################################################################
-# Bison / Flex
-##########################################################################
-find_package(Bison REQUIRED)
-find_package(Flex REQUIRED)
-BISON_TARGET(cudfparser ${CMAKE_SOURCE_DIR}/cudf/cudf.y 
-  ${CMAKE_CURRENT_BINARY_DIR}/cudf.tab.cpp COMPILE_FLAGS "--name-prefix=cudf")
 
- FLEX_TARGET(cudflexer ${CMAKE_SOURCE_DIR}/cudf/cudf.l
-  ${CMAKE_CURRENT_BINARY_DIR}/cudflexer.cpp COMPILE_FLAGS " --prefix=cudf")
- ADD_FLEX_BISON_DEPENDENCY(cudflexer cudfparser)
-##########################################################################
-# Find glpk
-##########################################################################
-find_library(GLPK_LIB glpk)
-find_path(GLPK_HDR glpk.h)
-if(GLPK_LIB AND GLPK_HDR)
-  message(STATUS "Using glpk from: ${GLPK_LIB}")
-else()
-  message(FATAL_ERROR "glpk is needed to build this project")
-endif()
-include_directories(${GLPK_HDR})
-##########################################################################
-# This project products
-##########################################################################
-add_subdirectory(gephi)
 ##########################################################################
 # This project products
 ##########################################################################
 include_directories(${CMAKE_SOURCE_DIR})
 
-add_library(unsaparser 
-  cudf/model.cpp
-  cudf/cudf_tools.cpp
-  cudf/cudf_hash_table.cpp
-  ${BISON_cudfparser_OUTPUTS}
-  ${FLEX_cudflexer_OUTPUTS})
+# The visualizer
+add_subdirectory(gephi)
+# The unsa parser
+add_subdirectory(cudf)
+# The paranoid solver (cprel)
+add_subdirectory(solver-cprel-paranoid)
+# The paranoid solver (cpint)
+add_subdirectory(solver-cpint-paranoid)
+# The paranoid solver (lp)
+add_subdirectory(solver-lp-paranoid)
 
-## Paranoid solver
-add_executable(lp-paranoid solver-lp-paranoid/paranoid.cpp)
-target_link_libraries(lp-paranoid unsaparser ${GLPK_LIB})
-
-add_executable(cpint-paranoid solver-cpint-paranoid/paranoid.cpp
-  solver-cpint-paranoid/brancher.cpp
-)
-target_link_libraries(cpint-paranoid unsaparser ${GECODE_LIBRARIES})
-
-add_executable(cprel-paranoid 
-  solver-cprel-paranoid/paranoid.cpp
-  solver-cprel-paranoid/solver.cpp
-  solver-cprel-paranoid/solver-handlers.cpp
-  solver-cprel-paranoid/solver-opt.cpp
-  solver-cprel-paranoid/solver-branch.cpp
-  solver-cprel-paranoid/prop/dependencies.cpp
-  solver-cprel-paranoid/prop/provides.cpp
-  solver-cprel-paranoid/prop/conflicts.cpp
-
-## Heuristics
-  solver-cprel-paranoid/branch/stableProvides.cpp
-  solver-cprel-paranoid/branch/minimalChanges.cpp
-  solver-cprel-paranoid/branch/existingInstall.cpp
-)
-target_link_libraries(cprel-paranoid 
-  unsaparser 
-  ${GECODE_LIBRARIES}
-  ${CPREL_LIBRARIES} 
-)
-
-
+## Temporal, should be removed adter
 #add_executable(statistics tools/stats.cpp)
 #target_link_libraries(statistics ${CUDF_LIB} ${KCUDF_LIB} ${CPREL_LIBRARIES} ${Boost_LIBRARIES})
 
