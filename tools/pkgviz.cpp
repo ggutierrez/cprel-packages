@@ -45,14 +45,25 @@ private:
     return edgeId.str();
   }
   /// Adds the edge (\a source, \a target) to the graph
-  void addEdge(const string& source, const string& target) {
-    if (!graph_.containsEdge(source,target))
-      graph_.addEdge(edgeId(source,target),source,target);
+  void addEdge(CUDFVersionedPackage *p, CUDFVersionedPackage *q, const char* relation = "NONE") {
+    string source = label(p), target = label(q);
+    if (!graph_.containsEdge(source,target)) {
+      string edge = edgeId(source,target);
+      graph_.addEdge(edge,source,target);
+      data_.setEdgeValue(edge, "0", relation);
+    }
   }
   /// Adds the node \a n to the graph
-  void addNode(const string& n) {
-    graph_.addNode(n);
-
+  void addNode(CUDFVersionedPackage *p) {
+    string node = label(p);
+    graph_.addNode(node);
+    data_.setNodeLabel(node,versionedName(p));
+    data_.setNodeValue(node,"0", foundInstalled(p) ? "true" : "false");
+  }
+  /// Adds information on the graph that the package is part of the request
+  void requested(CUDFVersionedPackage *p) {
+    string node = label(p);
+    data_.setNodeValue(node, "1", "true");
   }
 public:
     // Objects of this class are non-copyable
@@ -66,6 +77,14 @@ public:
     , graph_(gexf_->getDirectedGraph())
     , data_(gexf_->getData())
   {
+    // set up some of the attributes we will store on nodes and edges
+    data_.addNodeAttributeColumn("0", "Reported Installed?", "boolean");
+    data_.setNodeAttributeDefault("0", "false");
+    data_.addNodeAttributeColumn("1", "Involved in Request?", "boolean");
+    data_.setNodeAttributeDefault("1", "false");
+    data_.addEdgeAttributeColumn("0", "Relation", "string");
+    data_.setEdgeAttributeDefault("0", "N");
+
     // The call to these methods will make the interpretation of the
     // constraints. This will indirectly make the methods that we
     // override to be called.
@@ -85,27 +104,26 @@ public:
    * packages in \a disj
    */
   virtual void depend(CUDFVersionedPackage *p, const vector<CUDFVersionedPackage*>& disj) {
-    string source = label(p);
-    addNode(source);
+    addNode(p);
     for (CUDFVersionedPackage *d : disj) {
-      string target = label(d);
-      addNode(target);
-      addEdge(source,target);
+      addNode(d);
+      addEdge(p,d,"d");
     }
   }
   /// Add a conflict between package \a p and package \a q
   virtual void conflict(CUDFVersionedPackage *p, CUDFVersionedPackage *q) {
-    string source = label(p);
-    string target = label(q);
-    addEdge(source,target);
+    addNode(p);
+    addNode(q);
+    addEdge(p,q, "c");
   }
   /// Handle keep constraint \a kcst for package \a p with impact \a pkgs
   virtual void keep(int , CUDFVersionedPackage *, const vector<CUDFVersionedPackage*>&) {
     
   }
   /// Handle the installation of one of the packages in \a disj
-  virtual void install(const vector<CUDFVersionedPackage*>& disj){
-    
+  virtual void install(const vector<CUDFVersionedPackage*>& disj) {
+    for (CUDFVersionedPackage *p : disj)
+      requested(p);
   }
 };
 
