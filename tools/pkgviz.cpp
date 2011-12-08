@@ -20,44 +20,32 @@ private:
   /// Data structure to associates disjunctions and virtual packages
   std::unordered_map<std::string,int> virtuals_;
 protected:
-  /// Returns the identifier for package \a p
-  int toPackageId(CUDFVersionedPackage *p) const  {
-    return rank(p);
-  }
-  /// Converts a disjunction of packages into packages ids using the rank
-  vector<int> toPackageIds(const vector<CUDFVersionedPackage*>& disj) {
-    vector<int> r;
-    r.reserve(disj.size()); 
-    for (CUDFVersionedPackage *p : disj)
-      r.push_back(toPackageId(p));
-    return r;
-  }
-  /// Sort a vector of integers
-  void makeCanonic(vector<int>& disj) {
-    std::sort(std::begin(disj),std::end(disj));
-  }
-  /// Creates a key for \a disj
-  string makeKey(vector<int>& disj) {
-    makeCanonic(disj);
-    string key;
-    std::stringstream ss(key);
-    for (int p : disj)
-      ss << p;
+  /// Return a name for \a disj
+  std::string name(const vector<CUDFVersionedPackage*>& disj) {
+    // the name to be returned is based in the names of the packages
+    // involved in the disjunction, so we first extract the names
+    std::vector<std::string> names;
+    names.reserve(disj.size());
+    for (auto *p : disj)
+      names.push_back(versionedName(p));
+    // to make the disjunction unique we sort
+    std::sort(begin(names), end(names));
+    
+    std::stringstream ss;
+    for (auto &p : names)
+      ss << p << "|";
     return ss.str();
   }
   /// Returns the package representing disjunction \a disj_
-  int lookUpOrAdd(const vector<CUDFVersionedPackage*>& disj_) {
-    vector<int> disj = toPackageIds(disj_);
-    string key(makeKey(disj));
-    auto f = virtuals_.find(key);
-    if (f != virtuals_.end()) {
-      // a disjunction like this already exists.
-      return f->second;
+  int lookUpOrAdd(const vector<CUDFVersionedPackage*>& disj) {
+    string key = name(disj);
+    auto e = virtuals_.find(key);
+    if (e == virtuals_.end()) {
+      int newVirtual = packages().size() + virtuals_.size();
+      virtuals_[key] = newVirtual;
+      return newVirtual;
     }
-    
-    int vp = virtuals_.size();
-    virtuals_[key] = vp;
-    return vp;
+    return e->second;
   }
 public:
   // Objects of this class are non-copyable
@@ -68,6 +56,10 @@ public:
   ModelVirtuals(const char* cudf) 
     : CUDFTools::Model(cudf)
   {}
+  /// Return the number of virtual packages that were processed
+  int virtualPackages(void) const {
+    return virtuals_.size();
+  }
 };
 
 //class Visualizer : public CUDFTools::Model {
@@ -85,48 +77,27 @@ private:
     ss << p;
     return ss.str();
   }
-  /// Transform a package into an string (using the rank)
-  string label(CUDFVersionedPackage *p) const {
-    std::stringstream ss;
-    ss << rank(p);
-    return ss.str();
-  }
   /// Returns the identifier for an edge from \a source to \a target
-  static string edgeId(const string& source, const string& target) {
+  static string edgeId(int source, int target) {
     std::stringstream edgeId;
     edgeId << source << " -- " << target;
     return edgeId.str();
   }
   /// Adds the edge (\a source, \a target) to the graph
-  void addEdge(const string& source, const string&  target, const char* relation = "NONE") {
-    if (!graph_.containsEdge(source,target)) {
+  void addEdge(int source, int  target, const char *relation = "error") {
+    string sid = label(source);
+    string tid = label(target);
+    if (!graph_.containsEdge(sid,tid)) {
       string edge = edgeId(source,target);
-      graph_.addEdge(edge,source,target);
-      data_.setEdgeValue(edge, "0", relation);
+      graph_.addEdge(edge,sid,tid);
+      data_.setEdgeValue(edge,"0",relation);
     }
+    
   }
-  /// Adds the edge (\a source, \a target) to the graph
-  void addEdge(CUDFVersionedPackage *p, CUDFVersionedPackage *q, const char* relation = "NONE") {
-    string source = label(p), target = label(q);
-    addEdge(source,target,relation);
-  }
-  /// Adds the node \a n to the graph
-  void addNode(const string&  n, const string& desc, const string& value) {
-    graph_.addNode(n);
-    data_.setNodeLabel(n,desc);
-    data_.setNodeValue(n,"0",value);
-  }
-  /// Adds the node \a n to the graph
-  void addNode(CUDFVersionedPackage *p) {
-    string node = label(p);
-    string desc = versionedName(p);
-    string value = foundInstalled(p) ? "true" : "false";
-    addNode(node,desc,value);
-  }
-  /// Adds information on the graph that the package is part of the request
-  void requested(CUDFVersionedPackage *p) {
-    string node = label(p);
-    data_.setNodeValue(node, "1", "true");
+  void addNode(int n, const char *name = "none") {
+    string id  = label(n);
+    graph_.addNode(id);
+    data_.setNodeLabel(id,name);
   }
 public:
     // Objects of this class are non-copyable
@@ -142,13 +113,14 @@ public:
     , data_(gexf_->getData())
   {
     // set up some of the attributes we will store on nodes and edges
+    /*
     data_.addNodeAttributeColumn("0", "Reported Installed?", "boolean");
     data_.setNodeAttributeDefault("0", "false");
     data_.addNodeAttributeColumn("1", "Involved in Request?", "boolean");
     data_.setNodeAttributeDefault("1", "false");
+    */
     data_.addEdgeAttributeColumn("0", "Relation", "string");
-    data_.setEdgeAttributeDefault("0", "N");
-
+    data_.setEdgeAttributeDefault("0", "None");
     // The call to these methods will make the interpretation of the
     // constraints. This will indirectly make the methods that we
     // override to be called.
@@ -168,29 +140,28 @@ public:
    * packages in \a disj
    */
   virtual void depend(CUDFVersionedPackage *p, const vector<CUDFVersionedPackage*>& disj) {
-    addNode(p);
+    addNode(rank(p),versionedName(p));
     if (disj.size() == 1) {
-      addNode(disj.at(0));
-      addEdge(p,disj.at(0),"d");
-    } else {
-      
-      int v = lookUpOrAdd(disj);
-      addVirtualDependency(p,v);
+      CUDFVersionedPackage *d = disj.at(0);
+      addNode(rank(d),versionedName(d));
+      addEdge(rank(p),rank(d),"D");
+      return;
     }
-  }
-  void addVirtualDependency(CUDFVersionedPackage *p, int vtual) {
-    string target = label(vtual);
-    string source = label(p);
-    // this should be true if at least one package in the disjunction
-    // is installed
-    addNode(target,"virtual","false");
-    addEdge(source,target, "p");
+
+    string disjName = name(disj);
+    int disjId = lookUpOrAdd(disj);
+    addNode(disjId,name(disj).c_str());
+    addEdge(rank(p),disjId, "DV");
+    for (auto *d : disj) {
+      addNode(rank(d),versionedName(d));
+      addEdge(rank(d),disjId,"PV");
+    }
   }
   /// Add a conflict between package \a p and package \a q
   virtual void conflict(CUDFVersionedPackage *p, CUDFVersionedPackage *q) {
-    addNode(p);
-    addNode(q);
-    addEdge(p,q, "c");
+    addNode(rank(p),versionedName(p));
+    addNode(rank(q),versionedName(q));
+    addEdge(rank(p),rank(q),"C");
   }
   /// Handle keep constraint \a kcst for package \a p with impact \a pkgs
   virtual void keep(int , CUDFVersionedPackage *, const vector<CUDFVersionedPackage*>&) {
@@ -198,10 +169,7 @@ public:
   }
   /// Handle the installation of one of the packages in \a disj
   virtual void install(const vector<CUDFVersionedPackage*>& disj) {
-    /*
-    for (CUDFVersionedPackage *p : disj)
-      requested(p);
-    */
+
   }
 };
 
