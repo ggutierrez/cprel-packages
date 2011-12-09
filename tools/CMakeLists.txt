@@ -7,3 +7,9 @@ target_link_libraries(
   unsaparser
   gexf
 )
+
+add_executable(profile profiler.cpp)
+target_link_libraries(
+  profile 
+  unsaparser
+)

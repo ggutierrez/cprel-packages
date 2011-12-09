@@ -28,6 +28,8 @@ namespace CUDFTools {
     ModelVirtuals(const char* cudf);
     /// Return the number of virtual packages that were processed
     int virtualPackages(void) const;
+    /// Return if a package identifier represents a virtual package
+    bool isVirtual(int p) const;
   };
 
   /// A class that represents a model as a graph

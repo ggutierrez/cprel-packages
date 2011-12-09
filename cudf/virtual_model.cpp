@@ -9,7 +9,11 @@ namespace CUDFTools {
   int ModelVirtuals::virtualPackages(void) const {
     return virtuals_.size();
   }
-   
+
+  bool ModelVirtuals::isVirtual(int p) const {
+    return static_cast<unsigned int>(p) >= packages().size();
+  }
+
   std::string ModelVirtuals::name(const std::vector<CUDFVersionedPackage*>& disj) {
     // the name to be returned is based in the names of the packages
     // involved in the disjunction, so we first extract the names
