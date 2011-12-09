@@ -1,3 +1,4 @@
+#include <map>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -8,6 +9,7 @@
 
 using std::string;
 using std::vector;
+using std::map;
 using std::cout;
 using std::endl;
 
@@ -19,6 +21,8 @@ private:
   typedef adjacency_list <vecS, vecS, undirectedS> Graph;
   /// The graph
   Graph g_;
+  /// The nodes in the graph that are created because of the request
+  vector<int> request_;
   /// Adds the edge (\a source, \a target) to the graph
   void addEdge(int source, int  target, const char *relation = "error") {
     add_edge(source, target, g_);
@@ -33,7 +37,7 @@ public:
   /// constructor from a cudf specification
   ImpactGraph(const char* cudf) 
     : GraphModel(cudf)
-    , g_(packages().size())
+      //    , g_(packages().size())
   {
     loadUniverse();
     interpretRequest();
@@ -82,14 +86,38 @@ public:
   /// Handle the installation of one of the packages in \a disj
   virtual void install(const vector<CUDFVersionedPackage*>& disj) {
 
+    string disjName = name(disj);
+    cout << "Requested: " << disjName << endl;
+    int disjId = lookUpOrAdd(disj);
+    addNode(disjId,name(disj).c_str());
+
+    request_.push_back(disjId);
+
+    for (auto *d : disj) {
+      addNode(rank(d),versionedName(d));
+      addEdge(rank(d),disjId,"PV");
+    }
   }
 
   /// Connected components
   void connectedComponents(void) const {
     vector<int> component(num_vertices(g_));
     int num = connected_components(g_, &component[0]);
-    
-    vector<int>::size_type i;
+
+    // In which components are the nodes in the request?
+    for (int n : request_)
+      cout << "Node: " << n << " in " << component.at(n) << endl;
+    // process the information obtained by the algorithm.
+    map<int,vector<int>> subproblems; // map<component,vector<nodes_in_component>
+    for (unsigned int i = 0; i != component.size(); ++i)
+      subproblems[component.at(i)].push_back(i);
+    /*
+    cout << "Component " << ", " << "Size" << endl; 
+    for (auto& r : subproblems) {
+      cout << r.first << ", " << r.second.size() << endl; 
+    }
+    */
+    //vector<int>::size_type i;
     cout << "Total number of components: " << num << endl;
     /*
     for (i = 0; i != component.size(); ++i)
