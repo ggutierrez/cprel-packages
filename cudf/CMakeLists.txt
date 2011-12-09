@@ -12,6 +12,7 @@ FLEX_TARGET(cudflexer cudf.l
 
 add_library(unsaparser 
   model.cpp
+  virtual_model.cpp
   cudf_tools.cpp
   cudf_hash_table.cpp
   ${BISON_cudfparser_OUTPUTS}

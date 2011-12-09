@@ -1,11 +1,8 @@
 #include <vector>
-#include <algorithm>
 #include <fstream>
 #include <string>
 #include <memory>
-#include <sstream>
-#include <unordered_map>
-#include <cudf/model.hh>
+#include <cudf/virtual_model.hh>
 #include <libgexf/libgexf.h>
 
 using std::vector;
@@ -15,55 +12,9 @@ using std::unique_ptr;
 using std::string;
 
 
-class ModelVirtuals : public CUDFTools::Model {
-private:
-  /// Data structure to associates disjunctions and virtual packages
-  std::unordered_map<std::string,int> virtuals_;
-protected:
-  /// Return a name for \a disj
-  std::string name(const vector<CUDFVersionedPackage*>& disj) {
-    // the name to be returned is based in the names of the packages
-    // involved in the disjunction, so we first extract the names
-    std::vector<std::string> names;
-    names.reserve(disj.size());
-    for (auto *p : disj)
-      names.push_back(versionedName(p));
-    // to make the disjunction unique we sort
-    std::sort(begin(names), end(names));
-    
-    std::stringstream ss;
-    for (auto &p : names)
-      ss << p << "|";
-    return ss.str();
-  }
-  /// Returns the package representing disjunction \a disj_
-  int lookUpOrAdd(const vector<CUDFVersionedPackage*>& disj) {
-    string key = name(disj);
-    auto e = virtuals_.find(key);
-    if (e == virtuals_.end()) {
-      int newVirtual = packages().size() + virtuals_.size();
-      virtuals_[key] = newVirtual;
-      return newVirtual;
-    }
-    return e->second;
-  }
-public:
-  // Objects of this class are non-copyable
-  ModelVirtuals() = delete;
-  ModelVirtuals(const ModelVirtuals&) = delete;
-  ModelVirtuals& operator = (const ModelVirtuals&) = delete;
-  /// Constructor from a input specification in \a cudf
-  ModelVirtuals(const char* cudf) 
-    : CUDFTools::Model(cudf)
-  {}
-  /// Return the number of virtual packages that were processed
-  int virtualPackages(void) const {
-    return virtuals_.size();
-  }
-};
 
 //class Visualizer : public CUDFTools::Model {
-class Visualizer : public ModelVirtuals {
+class Visualizer : public CUDFTools::GraphModel {
 private:
   /// Pointer to the gexf object
   unique_ptr<libgexf::GEXF> gexf_;
@@ -76,12 +27,6 @@ private:
     std::stringstream ss;
     ss << p;
     return ss.str();
-  }
-  /// Returns the identifier for an edge from \a source to \a target
-  static string edgeId(int source, int target) {
-    std::stringstream edgeId;
-    edgeId << source << " -- " << target;
-    return edgeId.str();
   }
   /// Adds the edge (\a source, \a target) to the graph
   void addEdge(int source, int  target, const char *relation = "error") {
@@ -100,24 +45,23 @@ private:
     data_.setNodeLabel(id,name);
   }
 public:
-    // Objects of this class are non-copyable
+  // Objects of this class are non-copyable
   Visualizer() = delete;
   Visualizer(const Visualizer&) = delete;
   Visualizer& operator = (const Visualizer&) = delete;
   /// Constructor from a input specification in \a cudf
   Visualizer(const char* cudf) 
-  //    : CUDFTools::Model(cudf)
-    : ModelVirtuals(cudf)
+    : GraphModel(cudf)
     , gexf_(new libgexf::GEXF())
     , graph_(gexf_->getDirectedGraph())
     , data_(gexf_->getData())
   {
     // set up some of the attributes we will store on nodes and edges
     /*
-    data_.addNodeAttributeColumn("0", "Reported Installed?", "boolean");
-    data_.setNodeAttributeDefault("0", "false");
-    data_.addNodeAttributeColumn("1", "Involved in Request?", "boolean");
-    data_.setNodeAttributeDefault("1", "false");
+      data_.addNodeAttributeColumn("0", "Reported Installed?", "boolean");
+      data_.setNodeAttributeDefault("0", "false");
+      data_.addNodeAttributeColumn("1", "Involved in Request?", "boolean");
+      data_.setNodeAttributeDefault("1", "false");
     */
     data_.addEdgeAttributeColumn("0", "Relation", "string");
     data_.setEdgeAttributeDefault("0", "None");
@@ -155,8 +99,18 @@ public:
     for (auto *d : disj) {
       addNode(rank(d),versionedName(d));
       addEdge(rank(d),disjId,"PV");
+      provides(d,disjId);
     }
   }
+  /**
+   * \brief Called when a package \a p is found to be a provider of
+   * virtual package \a v.
+   *
+   */
+  void provides(CUDFVersionedPackage *p, int v) {
+    
+  }
+  
   /// Add a conflict between package \a p and package \a q
   virtual void conflict(CUDFVersionedPackage *p, CUDFVersionedPackage *q) {
     addNode(rank(p),versionedName(p));
