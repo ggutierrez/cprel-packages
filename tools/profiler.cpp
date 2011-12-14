@@ -1,10 +1,12 @@
 #include <map>
 #include <iostream>
 #include <vector>
+#include <iterator>
 #include <string>
 #include <boost/graph/subgraph.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_utility.hpp>
+#include <boost/iterator/filter_iterator.hpp>
 
 // graph algorithms
 #include <boost/graph/connected_components.hpp>
@@ -17,6 +19,7 @@ using std::vector;
 using std::map;
 using std::cout;
 using std::endl;
+using std::ostream;
 
 using namespace boost;
 
@@ -28,7 +31,9 @@ private:
   typedef adjacency_list_traits<vecS, vecS, directedS> Traits;
   typedef subgraph< 
     adjacency_list<vecS, vecS, directedS,
-                   property<vertex_color_t, int>, property<edge_index_t, int> > > Graph;
+                   property<vertex_color_t, int>, 
+                   property<edge_index_t, int> > 
+                   > Graph;
   
   /// The graph
   Graph g_;
@@ -126,12 +131,65 @@ public:
   void generateSubproblems(void) {
     partition(g_,0);
   }
-  static Vertex chooseAP(const Graph& g, const vector<Vertex>& aps) {
-    return aps.at(0);
+  static int hierarchyHelper(ostream& os, const Graph& g, int parent) {
+    assert(!g.is_root());
+    int children = parent + 1;
+    auto c = g.children();
+    if (distance(c.first,c.second) == 1) {
+      os << "\t" << parent << " -- " 
+         << children << "; - ap break" << endl;
+      children = hierarchyHelper(os, *(c.first), children);
+      return children;
+    }
+    for (; c.first != c.second; ++c.first) {
+      os << "\t" << parent << " -- " << children << ";" << endl;
+      children = hierarchyHelper(os, *(c.first), children);
+    }
+    return children;
   }
-  static void removeAP(Graph& g, Vertex ap) {
-    clear_vertex(ap,g);
+  /**
+   * \brief Prints the problem hierarchy to \a os as a tree in dot
+   * format
+   */
+  void subproblemHierarchy(ostream& os) const {
+    assert(g_.is_root());
+    os << "graph G {" << endl;
+    hierarchyHelper(os,g_,0);
+    os << "}" << endl;
   }
+  static vector<Vertex> select(const Graph& g, const vector<Vertex>& aps) {
+    vector<Vertex> selectedVertices;
+    selectedVertices.reserve(num_vertices(g));
+    auto v = vertices(g);
+    std::copy(v.first,v.second,std::back_inserter(selectedVertices));
+    selectedVertices.pop_back();
+    return selectedVertices;
+    /*
+        bool once = false;
+        auto allVertices = vertices(g);
+        auto predicate = [&once](Vertex v) -> bool {
+          if (!once) {
+            once = true;
+            return false;
+          }
+          return true;
+        };
+
+        typedef filter_iterator<decltype(predicate), 
+                                       decltype(allVertices.first)>
+          FilteredVertices;
+        
+        FilteredVertices
+          vertexSet(predicate,
+                    allVertices.first,
+                    allVertices.second),
+          vertexSetEnd(predicate,
+                       allVertices.second,
+                       allVertices.second);
+
+    */
+  }
+
   static void partition(Graph& g, int level) {
     if (num_vertices(g) < 10) {
       //cout << "Small enough" << endl;
@@ -141,23 +199,25 @@ public:
       auto subproblems = components(g);
       if (subproblems.size() == 1) {
         auto ap = articulationPoints(g);
-        
+        /*
         cout << out << "> (" 
              << num_vertices(g) << " * " 
              << num_edges(g) << " :ap: " 
              << ap.size() << ")" << endl;
-        auto v = chooseAP(g,ap);
-        removeAP(g,v);
-        partition(g,level+1);
+        */
+        auto s = select(g,ap);
+        Graph& sg = g.create_subgraph(s.begin(), s.end());
+        partition(sg,level+1);
       } else {
         for (auto s : subproblems) {
           Graph& sg = 
             g.create_subgraph(s.second.begin(),s.second.end());
+          /*
           if (num_edges(sg) > 2)
             cout << out << "> (" 
                  << num_vertices(sg) << " * " 
                  << num_edges(sg) << ")" << endl;
-          
+          */
           partition(sg,level+1);
         }
       }
@@ -194,6 +254,7 @@ int main(int argc, char *argv[]) {
   cout << "Relations: " << model.representedRelations() << endl;
   //model.connectedComponents();
   model.generateSubproblems();
+  model.subproblemHierarchy(cout);
   //model.articulationPoints();
   return 0;
 }
