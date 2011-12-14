@@ -90,6 +90,7 @@ add_subdirectory(solver-cpint-paranoid)
 add_subdirectory(solver-lp-paranoid)
 # Misc tools
 add_subdirectory(tools)
+add_subdirectory(solver-ap)
 
 ## Temporal, should be removed adter
 
