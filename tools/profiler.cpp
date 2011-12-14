@@ -129,21 +129,33 @@ public:
    * original problem graph.
    */
   void generateSubproblems(void) {
-    partition(g_,0);
+    int interesting = 0;
+    auto edgesStop = [&](const Graph& g) -> bool {
+      int edges =  num_edges(g);
+      if (num_vertices(g) == 1)
+        interesting++;
+      return edges < 10;
+    };
+    partition(g_,0,edgesStop);
+    cout << "Interesting count " << interesting << endl;
   }
-  static int hierarchyHelper(ostream& os, const Graph& g, int parent) {
+  static int hierarchyHelper(ostream& os, const Graph& g, int parent, int& leaves) {
     assert(!g.is_root());
     int children = parent + 1;
     auto c = g.children();
-    if (distance(c.first,c.second) == 1) {
+    int numChildren = distance(c.first,c.second);
+    if (numChildren == 0) {
+      leaves++;
+    }
+    if (numChildren == 1) {
       os << "\t" << parent << " -- " 
          << children << "; - ap break" << endl;
-      children = hierarchyHelper(os, *(c.first), children);
+      children = hierarchyHelper(os, *(c.first), children, leaves);
       return children;
     }
     for (; c.first != c.second; ++c.first) {
       os << "\t" << parent << " -- " << children << ";" << endl;
-      children = hierarchyHelper(os, *(c.first), children);
+      children = hierarchyHelper(os, *(c.first), children, leaves);
     }
     return children;
   }
@@ -153,72 +165,40 @@ public:
    */
   void subproblemHierarchy(ostream& os) const {
     assert(g_.is_root());
+    int leaves = 0;
     os << "graph G {" << endl;
-    hierarchyHelper(os,g_,0);
+    hierarchyHelper(os,g_,0,leaves);
     os << "}" << endl;
+    cout << "Subproblems: " << leaves << endl;
   }
   static vector<Vertex> select(const Graph& g, const vector<Vertex>& aps) {
     vector<Vertex> selectedVertices;
+    (void)aps;
     selectedVertices.reserve(num_vertices(g));
     auto v = vertices(g);
     std::copy(v.first,v.second,std::back_inserter(selectedVertices));
     selectedVertices.pop_back();
     return selectedVertices;
-    /*
-        bool once = false;
-        auto allVertices = vertices(g);
-        auto predicate = [&once](Vertex v) -> bool {
-          if (!once) {
-            once = true;
-            return false;
-          }
-          return true;
-        };
-
-        typedef filter_iterator<decltype(predicate), 
-                                       decltype(allVertices.first)>
-          FilteredVertices;
-        
-        FilteredVertices
-          vertexSet(predicate,
-                    allVertices.first,
-                    allVertices.second),
-          vertexSetEnd(predicate,
-                       allVertices.second,
-                       allVertices.second);
-
-    */
   }
 
-  static void partition(Graph& g, int level) {
-    if (num_vertices(g) < 10) {
-      //cout << "Small enough" << endl;
+  template <typename StopFunctor>
+  static void partition(Graph& g, int level, StopFunctor stop) {
+    if (stop(g)) {
+      // At this point the graph is consider to represent a reasonable
+      // sub-problem.
       return;
     } else {
-      string out(level,'-');
       auto subproblems = components(g);
       if (subproblems.size() == 1) {
         auto ap = articulationPoints(g);
-        /*
-        cout << out << "> (" 
-             << num_vertices(g) << " * " 
-             << num_edges(g) << " :ap: " 
-             << ap.size() << ")" << endl;
-        */
         auto s = select(g,ap);
         Graph& sg = g.create_subgraph(s.begin(), s.end());
-        partition(sg,level+1);
+        partition(sg,level+1,stop);
       } else {
         for (auto s : subproblems) {
           Graph& sg = 
             g.create_subgraph(s.second.begin(),s.second.end());
-          /*
-          if (num_edges(sg) > 2)
-            cout << out << "> (" 
-                 << num_vertices(sg) << " * " 
-                 << num_edges(sg) << ")" << endl;
-          */
-          partition(sg,level+1);
+          partition(sg,level+1,stop);
         }
       }
     }
@@ -239,7 +219,6 @@ public:
   static vector<Vertex> articulationPoints(Graph& g) {    
     std::vector<Vertex> artPoints;
     articulation_points(g, std::back_inserter(artPoints));
-    //std::cerr << "Found " << artPoints.size() << " articulation points.\n";
     return artPoints;
   }
 };
@@ -252,9 +231,7 @@ int main(int argc, char *argv[]) {
   
   ImpactGraph model(argv[1]);
   cout << "Relations: " << model.representedRelations() << endl;
-  //model.connectedComponents();
   model.generateSubproblems();
-  model.subproblemHierarchy(cout);
-  //model.articulationPoints();
+  //model.subproblemHierarchy(cout);
   return 0;
 }
