@@ -2,6 +2,11 @@
 #include <string>
 #include <boost/iterator/filter_iterator.hpp>
 #include <boost/graph/graphviz.hpp>
+#include <boost/graph/properties.hpp>
+#include <boost/graph/property_maps/constant_property_map.hpp>
+#include <boost/graph/property_maps/null_property_map.hpp>
+#include <boost/graph/graph_traits.hpp>
+
 // graph algorithms
 #include <boost/graph/connected_components.hpp>
 #include <boost/graph/biconnected_components.hpp>
@@ -163,8 +168,9 @@ namespace CUDFTools {
       }
       std::copy(begin(include), end(include), std::inserter(finalNodes,begin(finalNodes)));
       
-      auto& fsp = g.root().create_subgraph(begin(finalNodes),end(finalNodes));
-      return &fsp;
+      //auto& fsp = g.root().create_subgraph(begin(finalNodes),end(finalNodes));
+      //return &fsp;
+      return &g;
     }
 
     /**
@@ -239,6 +245,14 @@ namespace CUDFTools {
 
           // \todo not happy with this condition!!.
           if (num_vertices(g) != num_vertices(leftSubproblem)) {
+            // store some information in the node about the articulation
+            {
+              auto& gp = boost::get_property(g,boost::graph_bundle);
+              gp.articulated = true;
+              gp.id = g[s].id;
+              std::copy(begin(include),end(include),std::inserter(gp.include,begin(gp.include)));
+            }
+            //g[boost::graph_bundle].articulated; // = true;
             partition(leftSubproblem,level+1,stop,include,sub);
             //assert(num_vertices(g) == (num_vertices(sg) + 1));
            
@@ -265,7 +279,6 @@ namespace CUDFTools {
       return num_edges(g) < 10;
     };
     set<Vertex> include;
-    //include.reserve(num_vertices(g));
     internal::partition(g_,0,edgesStop,include,subproblems_);
   }
 
@@ -296,6 +309,42 @@ namespace CUDFTools {
 
   void ImpactGraph::outputProblem(ostream& os) {
     toDot(g_,os);
+  }
+
+  namespace internal {
+    void outputSubproblemTreeRec(ostream& os, const ImpactGraphType& g, int& id) {
+      int nodeId = id;
+      os << nodeId << " [label=\"" 
+         << nodeId;
+
+      {
+        int nodes = num_vertices(g);        
+        os << "," << nodes;
+        
+        bool articulated = boost::get_property(g,boost::graph_bundle).articulated;
+        set<size_t> include = boost::get_property(g,boost::graph_bundle).include;
+        if (articulated)
+          os << "*";
+        os << "(";
+        for (auto e : include) 
+          os << (int)e << ",";
+        os << ")";
+      }
+      os << "\"];" << endl;
+      id++;
+      auto c = g.children();
+      for (;c.first != c.second; ++c.first) {
+        os << nodeId << "--" << id << ";" << endl;
+        outputSubproblemTreeRec(os,*(c.first),id);
+      }
+      
+    }
+  }
+  void ImpactGraph::outputSubproblemTree(ostream& os) const {
+    os << "graph G {" << endl;
+    int nodeId = 0;
+    internal::outputSubproblemTreeRec(os,g_,nodeId);
+    os << "}" << endl;
   }
 
   namespace internal {

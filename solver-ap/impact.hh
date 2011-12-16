@@ -17,12 +17,23 @@ namespace CUDFTools {
     std::string name;
   };
 
+  struct ImpactGraphData {
+    /** 
+     * \brief Indicates if the graph is the result of removing an
+     * aritculation point
+     */
+    bool articulated;
+    size_t id;
+    std::set<size_t> include;
+  };
+
   typedef boost::adjacency_list<
     boost::setS, 
     boost::vecS,
     boost::undirectedS,
     ImpactGraphVertexData,
-    boost::property<boost::edge_index_t,int,ImpactGraphEdgeData>
+    boost::property<boost::edge_index_t,int,ImpactGraphEdgeData>,
+    ImpactGraphData
     > _Graph_;
  
   /// The graph type
@@ -86,6 +97,8 @@ namespace CUDFTools {
     void outputSubproblem(int i, std::ostream& os);
     /// Output the graph of the problem to \a os in dot format
     void outputProblem(std::ostream& os);
+    /// Output problem decomposition information
+    void outputSubproblemTree(std::ostream& os) const;
     /**
      * \brief Prints the problem hierarchy to \a os as a tree in dot
      * format

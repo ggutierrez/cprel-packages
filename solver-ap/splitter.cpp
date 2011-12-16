@@ -17,15 +17,15 @@ int main(int argc, char *argv[]) {
   model.outputProblem(cout);
   
   model.generateSubproblems();
- 
+  /* 
   for (int i = 0; i < model.subproblemsCount(); i++) {
     cout << "New subproblem" << endl;
     model.outputSubproblem(i,cout);
   }
-  
+  */
+  model.outputSubproblemTree(cout);
   cout << "Subproblems: " << model.subproblemsCount() << endl;
-  //cout << "Trivial subproblems: " << model.trivialSubproblemsCount() << endl;
-  //model.subproblemHierarchy(cout);
+
  
   return 0;
 }
