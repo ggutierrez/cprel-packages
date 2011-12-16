@@ -12,8 +12,19 @@ int main(int argc, char *argv[]) {
   }
   
   ImpactGraph model(argv[1]);
-  //cout << "Relations: " << model.representedRelations() << endl;
+  cout << "Relations: " << model.representedRelations() << endl;
+  cout << "Packages: " << model.representedPackages() << endl;
+  model.outputProblem(cout);
+  
   model.generateSubproblems();
+ 
+  for (int i = 0; i < model.subproblemsCount(); i++) {
+    cout << "New subproblem" << endl;
+    model.outputSubproblem(i,cout);
+  }
+  
+  cout << "Subproblems: " << model.subproblemsCount() << endl;
+  //cout << "Trivial subproblems: " << model.trivialSubproblemsCount() << endl;
   //model.subproblemHierarchy(cout);
  
   return 0;

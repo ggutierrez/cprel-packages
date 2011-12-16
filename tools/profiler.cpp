@@ -186,6 +186,7 @@ public:
     if (stop(g)) {
       // At this point the graph is consider to represent a reasonable
       // sub-problem.
+   
       return;
     } else {
       auto subproblems = components(g);

@@ -1,30 +1,50 @@
 #ifndef __CPREL_PACKAGES_SOLVER_AP_IMPACT_HH
 #define __CPREL_PACKAGES_SOLVER_AP_IMPACT_HH
 
+#include <string>
 #include <boost/graph/subgraph.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <cudf/virtual_model.hh>
 
 namespace CUDFTools {
+  struct ImpactGraphVertexData {
+    ///size_t color;
+    size_t id;
+    std::string name;
+  };
+  struct ImpactGraphEdgeData {
+    //size_t index;
+    std::string name;
+  };
+
+  typedef boost::adjacency_list<
+    boost::setS, 
+    boost::vecS,
+    boost::undirectedS,
+    ImpactGraphVertexData,
+    boost::property<boost::edge_index_t,int,ImpactGraphEdgeData>
+    > _Graph_;
+ 
   /// The graph type
-  typedef boost::subgraph< 
-    boost::adjacency_list<
-      boost::vecS, 
-      boost::vecS,
-      boost::directedS,
-      boost::property<boost::vertex_color_t, int>, 
-      boost::property<boost::edge_index_t, int> > 
-    > ImpactGraphType;
+  typedef boost::subgraph<_Graph_> ImpactGraphType;
 
   /// The type of a vertex in the graph
-  typedef boost::graph_traits <ImpactGraphType>::vertex_descriptor Vertex;
-  
+  typedef boost::graph_traits< ImpactGraphType >::vertex_descriptor Vertex;
 
+  /// The type of a vertex in the graph
+  typedef boost::graph_traits< ImpactGraphType >::vertex_iterator VertexIterator;
+
+  /**
+   * \brief Class to represent the impact of packages in a model
+   */
   class ImpactGraph : public GraphModel {
   private:
-
     /// The graph
     ImpactGraphType g_;
+    /// Map package identifiers to nodes in the grap
+    std::map<int,Vertex> nodeToVertex;
+    /// All the sub problems
+    std::vector<ImpactGraphType*> subproblems_;
     /// Adds the edge (\a source, \a target) to the graph
     void addEdge(int source, int  target, const char *relation = "error");
     /// Adds a node to the graph
@@ -52,10 +72,20 @@ namespace CUDFTools {
     virtual void install(const std::vector<CUDFVersionedPackage*>& disj);
     /// Returns the number of represented relations
     int representedRelations(void) const;
+    /// Returns the number of represented packages
+    int representedPackages(void) const;
     /**
      * \brief Traverse the represented problem and create the subproblems.
      */
     void generateSubproblems(void);
+    /// Returns the number of created sub-problems
+    int subproblemsCount(void) const;
+    /// Returns the number of trivial sub-problems
+    int trivialSubproblemsCount(void) const;
+    /// Output subproblem \a i to \a os in dot format
+    void outputSubproblem(int i, std::ostream& os);
+    /// Output the graph of the problem to \a os in dot format
+    void outputProblem(std::ostream& os);
     /**
      * \brief Prints the problem hierarchy to \a os as a tree in dot
      * format

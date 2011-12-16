@@ -83,3 +83,11 @@
   #+end_src
 
 , This is an inline snippet of Python: [[latex:python][x = str(y)]].
+* An example
+  Instead of delegating all the work to the solver we can compute
+  solutions to sub-problems and then combine them together. This
+  strategy can be used even in the presence of optimization and yet
+  let us to combine optimal solutions to get an optimal for a bigger
+  problem.
+
+  

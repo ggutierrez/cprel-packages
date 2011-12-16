@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cudf/virtual_model.hh>
 
 namespace CUDFTools {
@@ -15,6 +16,7 @@ namespace CUDFTools {
   }
 
   std::string ModelVirtuals::name(const std::vector<CUDFVersionedPackage*>& disj) {
+    assert(disj.size() > 0);
     // the name to be returned is based in the names of the packages
     // involved in the disjunction, so we first extract the names
     std::vector<std::string> names;
